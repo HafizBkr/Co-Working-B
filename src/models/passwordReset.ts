@@ -1,14 +1,14 @@
 import { Schema, model } from "mongoose";
 
-const otpSchema = new Schema({
+const passwordResetSchema = new Schema({
   email: { type: String, required: true },
   code: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
   expiresAt: { type: Date, required: true },
 });
 
-otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+passwordResetSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-const Otp = model("Otp", otpSchema);
+const PasswordReset = model("PasswordReset", passwordResetSchema);
 
-export default Otp;
+export default PasswordReset;

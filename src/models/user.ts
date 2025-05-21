@@ -38,3 +38,6 @@ const UserSchema = new Schema({
   videoEnabled: { type: Boolean, default: false },
   audioEnabled: { type: Boolean, default: false },
 });
+
+export const User = model("User", UserSchema);
+export type UserDocument = Document & typeof UserSchema;
