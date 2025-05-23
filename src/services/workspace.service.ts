@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import WorkspaceRepository from "../repository/workspace.repository";
 import WorkspaceMemberRepository from "../repository/workspace-member.repository";
 import { WorkspaceRole } from "../models/Workspace";
+import { User } from "../models/user";
 
 export const WorkspaceService = {
   /**
@@ -12,6 +13,12 @@ export const WorkspaceService = {
     session.startTransaction();
 
     try {
+      // Get the user to retrieve their email
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+
       const workspace = (await WorkspaceRepository.createWorkspace(
         {
           name: workspaceData.name,
@@ -26,6 +33,7 @@ export const WorkspaceService = {
         {
           workspace: workspace._id,
           user: new mongoose.Types.ObjectId(userId),
+          email: user.email, // Include the user's email
           role: WorkspaceRole.OWNER,
           invitedBy: new mongoose.Types.ObjectId(userId),
           inviteAccepted: true,

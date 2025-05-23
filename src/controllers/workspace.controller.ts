@@ -6,7 +6,6 @@ export const createWorkspace = async (req: Request, res: Response) => {
     const workspaceData = req.body;
     const userId = req.user?.userId;
 
-    // Debug: Ajoutez ces lignes pour diagnostiquer le problème
     console.log("Données reçues:", JSON.stringify(workspaceData, null, 2));
     console.log("User ID:", userId);
 
