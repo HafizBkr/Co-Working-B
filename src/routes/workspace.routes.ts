@@ -32,24 +32,13 @@ router.delete(
   workspaceController.deleteWorkspace,
 );
 
-router.post(
-  "/:workspaceId/members",
-  authenticateJWT,
-  hasWorkspaceAccess,
-  hasAdminAccess,
-  memberController.inviteToWorkspace,
-);
 router.get(
   "/:workspaceId/members",
   authenticateJWT,
   hasWorkspaceAccess,
   memberController.getWorkspaceMembers,
 );
-router.post(
-  "/:workspaceId/accept",
-  authenticateJWT,
-  memberController.acceptInvitation,
-);
+
 router.put(
   "/:workspaceId/members/:memberId",
   authenticateJWT,

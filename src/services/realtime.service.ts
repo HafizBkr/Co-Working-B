@@ -27,7 +27,6 @@ export class RealtimeService {
   }
 
   private initializeSocketHandlers() {
-    // Middleware for authentication
     this.io.use(async (socket, next) => {
       try {
         const token = socket.handshake.auth.token;
