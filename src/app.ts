@@ -3,6 +3,7 @@ import authRoutes from "./routes/auth";
 import { corsMiddleware } from "./middleware/cors.middleware";
 import { requestLogger } from "./middleware/logger.middleware";
 import workspaceRoutes from "./routes/workspace.routes";
+import workspaceInvitationRoutes from "./routes/workspace-invitation.routes";
 import {
   errorMiddleware,
   notFoundMiddleware,
@@ -18,6 +19,7 @@ app.use(express.json());
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/workspaces", workspaceRoutes);
+app.use("/api/v1/invitations", workspaceInvitationRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

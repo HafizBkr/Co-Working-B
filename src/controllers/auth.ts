@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { UserRepository } from "../repository/UserRepository";
 import { createAndSendOTP, verifyOTP } from "../utils/otp";
 import { generateToken } from "../utils/jwt";
+import { WorkspaceInvitationService } from "../services/workspace-invitation.service";
 import {
   createAndSendPasswordResetCode,
   verifyPasswordResetCode,
@@ -77,21 +78,29 @@ export const AuthController = {
       try {
         await verifyOTP(email, code);
 
-        const user = await userRepository.updateOne(
-          { email },
-          { emailVerified: true },
-        );
-
+        // Met à jour le user (emailVerified: true)
+        const user = await userRepository.findOne({ email });
         if (!user) {
           return res.status(404).json({
             success: false,
             message: "User not found",
           });
         }
+        user.emailVerified = true;
+        await user.save();
+
+        // Activation de l'invitation SI elle existe
+        let invitationActivated = false;
+        try {
+          await WorkspaceInvitationService.activateInvitationForUser(email);
+          invitationActivated = true;
+        } catch (e) {}
 
         return res.status(200).json({
           success: true,
-          message: "Email verified successfully",
+          message: invitationActivated
+            ? "Email vérifié et invitation acceptée, vous avez rejoint le workspace."
+            : "Email verified successfully",
         });
       } catch (otpError) {
         return res.status(400).json({
