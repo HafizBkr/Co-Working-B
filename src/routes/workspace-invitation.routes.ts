@@ -1,4 +1,5 @@
 import express from "express";
+import type { RequestHandler } from "express";
 import {
   inviteToWorkspace,
   acceptInvitationByToken,
@@ -12,14 +13,34 @@ import {
 
 const router = express.Router();
 
+// Handlers
+const inviteToWorkspaceHandler: RequestHandler = async (req, res) => {
+  await inviteToWorkspace(req, res);
+};
+
+const acceptInvitationByTokenHandler: RequestHandler = async (req, res) => {
+  await acceptInvitationByToken(req, res);
+};
+
+const registerAndAcceptInvitationHandler: RequestHandler = async (req, res) => {
+  await registerAndAcceptInvitation(req, res);
+};
+
+// Routes
 router.post(
   "/workspaces/:workspaceId/invitations",
   authenticateJWT,
   hasWorkspaceAccess,
   hasAdminAccess,
-  inviteToWorkspace,
+  inviteToWorkspaceHandler,
 );
-router.post("/invitations/accept", authenticateJWT, acceptInvitationByToken);
-router.post("/invitations/register", registerAndAcceptInvitation);
+
+router.post(
+  "/invitations/accept",
+  authenticateJWT,
+  acceptInvitationByTokenHandler,
+);
+
+router.post("/invitations/register", registerAndAcceptInvitationHandler);
 
 export default router;

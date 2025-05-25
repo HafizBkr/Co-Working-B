@@ -1,4 +1,5 @@
 import express from "express";
+import type { RequestHandler } from "express";
 import { authenticateJWT } from "../middleware/auth.middleware";
 import { hasWorkspaceAccess } from "../middleware/workspace.middleware";
 import * as chatController from "../controllers/chat.controller";
@@ -6,17 +7,55 @@ import * as chatController from "../controllers/chat.controller";
 const router = express.Router();
 
 // Middleware pour vérifier l'accès au chat
-const hasChatAccess = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+const hasChatAccess: RequestHandler = (req, res, next) => {
   next();
 };
 
-// Routes de chat
-router.post("/", authenticateJWT, chatController.createChat);
-router.get("/workspace/:workspaceId", authenticateJWT, hasWorkspaceAccess, chatController.getUserChats);
-router.get("/:chatId", authenticateJWT, hasChatAccess, chatController.getChatById);
-router.post("/:chatId/messages", authenticateJWT, hasChatAccess, chatController.sendMessage);
-router.put("/:chatId/read", authenticateJWT, hasChatAccess, (req, res) => {
+// Handlers
+const createChatHandler: RequestHandler = async (req, res) => {
+  await chatController.createChat(req, res);
+};
+
+const getUserChatsHandler: RequestHandler = async (req, res) => {
+  await chatController.getUserChats(req, res);
+};
+
+const getChatByIdHandler: RequestHandler = async (req, res) => {
+  await chatController.getChatById(req, res);
+};
+
+const sendMessageHandler: RequestHandler = async (req, res) => {
+  await chatController.sendMessage(req, res);
+};
+
+const markChatAsReadHandler: RequestHandler = (req, res) => {
   res.status(501).json({ message: "Not implemented yet" });
-});
+};
+
+// Routes de chat
+router.post("/", authenticateJWT, createChatHandler);
+
+router.get(
+  "/workspace/:workspaceId",
+  authenticateJWT,
+  hasWorkspaceAccess,
+  getUserChatsHandler,
+);
+
+router.get("/:chatId", authenticateJWT, hasChatAccess, getChatByIdHandler);
+
+router.post(
+  "/:chatId/messages",
+  authenticateJWT,
+  hasChatAccess,
+  sendMessageHandler,
+);
+
+router.put(
+  "/:chatId/read",
+  authenticateJWT,
+  hasChatAccess,
+  markChatAsReadHandler,
+);
 
 export default router;

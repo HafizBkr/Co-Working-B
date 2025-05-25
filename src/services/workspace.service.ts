@@ -33,7 +33,7 @@ export const WorkspaceService = {
         {
           workspace: workspace._id,
           user: new mongoose.Types.ObjectId(userId),
-          email: user.email, // Include the user's email
+          email: user.email,
           role: WorkspaceRole.OWNER,
           invitedBy: new mongoose.Types.ObjectId(userId),
           inviteAccepted: true,
