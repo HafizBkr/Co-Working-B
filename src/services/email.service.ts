@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Créer une instance du repository
+
 const userRepository = new UserRepository();
 
 export const EmailService = {
