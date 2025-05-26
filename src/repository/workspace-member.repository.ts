@@ -58,6 +58,13 @@ class WorkspaceMemberRepositoryClass extends BaseRepository<IWorkspaceMember> {
     });
   }
 
+  async deleteOneMembership(workspaceId: string, userId: string) {
+    return WorkspaceMember.deleteOne({
+      workspace: workspaceId,
+      user: userId,
+    });
+  }
+
   /**
    * Get all members for a workspace with populated user data
    */

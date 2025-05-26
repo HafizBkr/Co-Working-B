@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import WorkspaceInvitationRepository from "../repository/workspace-invitation.repository";
 import WorkspaceMemberRepository from "../repository/workspace-member.repository";
 import { UserRepository } from "../repository/UserRepository";
-import { EmailService } from "./email.service";
+import { EmailService } from "./invitation-email.service";
 import { WorkspaceRole } from "../models/Workspace";
 
 export const WorkspaceInvitationService = {
@@ -31,7 +31,6 @@ export const WorkspaceInvitationService = {
       status: "pending",
     });
 
-    // Créer le membre avec inviteAccepted: false
     await WorkspaceMemberRepository.createMembership({
       workspace: workspaceId,
       user: existingUser ? existingUser._id : undefined,
@@ -41,7 +40,6 @@ export const WorkspaceInvitationService = {
       inviteAccepted: false,
     });
 
-    // Envoi de l’email d’invitation avec le token
     await EmailService.sendInvitationEmail(
       email,
       workspaceName,
@@ -67,7 +65,6 @@ export const WorkspaceInvitationService = {
       throw new Error("Email ne correspond pas à l’invitation");
     }
 
-    // Trouver le membre existant (créé à l'invitation)
     const membership = await WorkspaceMemberRepository.findMembershipByEmail(
       invitation.workspace,
       invitation.email,
@@ -80,7 +77,6 @@ export const WorkspaceInvitationService = {
     membership.user = userId;
     await membership.save();
 
-    // Marquer l’invitation comme acceptée
     await WorkspaceInvitationRepository.setStatus(token, "accepted");
     return true;
   },
@@ -106,15 +102,11 @@ export const WorkspaceInvitationService = {
       );
     }
 
-    // Ici, l'utilisateur vient d'être créé, il n'est pas encore vérifié
-    // On ne crée PAS le membre tant que l'email n'est pas vérifié
-    // On met à jour le statut de l'invitation pour indiquer qu'on attend la vérification
     await WorkspaceInvitationRepository.setStatus(
       token,
       "waiting_verification",
     );
 
-    // Retourne un message explicite au frontend
     return {
       message:
         "Un email de vérification vous a été envoyé. Veuillez valider votre compte pour finaliser l'invitation.",
@@ -124,7 +116,6 @@ export const WorkspaceInvitationService = {
     };
   },
   async activateInvitationForUser(email: string) {
-    // 1. Trouver l'invitation en attente pour cet email
     const invitation = await WorkspaceInvitationRepository.findOne({
       email: email.toLowerCase(),
       status: { $in: ["pending", "waiting_verification"] },
@@ -133,12 +124,10 @@ export const WorkspaceInvitationService = {
     if (!invitation)
       throw new Error("Aucune invitation en attente pour cet email");
 
-    // 2. Trouver le user
     const userRepository = new UserRepository();
     const user = await userRepository.findOne({ email });
     if (!user) throw new Error("Utilisateur introuvable");
 
-    // 3. Mettre à jour le membre du workspace
     const membership = await WorkspaceMemberRepository.findMembershipByEmail(
       invitation.workspace,
       email,
@@ -149,7 +138,6 @@ export const WorkspaceInvitationService = {
     membership.user = user._id;
     await membership.save();
 
-    // 4. Mettre à jour le statut de l'invitation
     await WorkspaceInvitationRepository.setStatus(invitation.token, "accepted");
 
     return {

@@ -2,7 +2,7 @@ import express from "express";
 import type { RequestHandler } from "express";
 import { authenticateJWT } from "../middleware/auth.middleware";
 import { hasWorkspaceAccess } from "../middleware/workspace.middleware";
-import * as chatController from "../controllers/chat.controller";
+import { ChatController } from "../controllers/chat.controller";
 
 const router = express.Router();
 
@@ -13,19 +13,19 @@ const hasChatAccess: RequestHandler = (req, res, next) => {
 
 // Handlers
 const createChatHandler: RequestHandler = async (req, res) => {
-  await chatController.createChat(req, res);
+  await ChatController.createChat(req, res);
 };
 
 const getUserChatsHandler: RequestHandler = async (req, res) => {
-  await chatController.getUserChats(req, res);
+  await ChatController.getUserChats(req, res);
 };
 
 const getChatByIdHandler: RequestHandler = async (req, res) => {
-  await chatController.getChatById(req, res);
+  await ChatController.getChatById(req, res);
 };
 
 const sendMessageHandler: RequestHandler = async (req, res) => {
-  await chatController.sendMessage(req, res);
+  await ChatController.sendMessage(req, res);
 };
 
 const markChatAsReadHandler: RequestHandler = (req, res) => {
