@@ -5,6 +5,7 @@ import { requestLogger } from "./middleware/logger.middleware";
 import workspaceRoutes from "./routes/workspace.routes";
 import workspaceInvitationRoutes from "./routes/workspace-invitation.routes";
 import projectRoutes from "./routes/project.routes";
+import taskRoutes from "./routes/task.routes";
 import {
   errorMiddleware,
   notFoundMiddleware,
@@ -22,6 +23,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/workspaces", workspaceRoutes);
 app.use("/api/v1/invitations", workspaceInvitationRoutes);
 app.use("/api/v1/projects", projectRoutes);
+app.use("/api/v1/tasks", taskRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
