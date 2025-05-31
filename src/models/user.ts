@@ -1,8 +1,13 @@
 import { Schema, model } from "mongoose";
-import { kMaxLength } from "node:buffer";
 
 const UserSchema = new Schema({
-  email: { type: String, required: true, unique: true, kMaxLength: 255 },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    kMaxLength: 255,
+    lowercase: true,
+  },
 
   password: {
     type: String,

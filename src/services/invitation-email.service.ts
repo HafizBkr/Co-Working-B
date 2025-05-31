@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { config } from "../configs/configs";
-import { UserRepository } from "../repository/UserRepository";
+import { UserRepository } from "../repository/User.repository";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -11,7 +11,6 @@ const transporter = nodemailer.createTransport({
     pass: config.emailPass,
   },
 });
-
 
 const userRepository = new UserRepository();
 

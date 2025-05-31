@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import WorkspaceInvitationRepository from "../repository/workspace-invitation.repository";
 import WorkspaceMemberRepository from "../repository/workspace-member.repository";
-import { UserRepository } from "../repository/UserRepository";
+import { UserRepository } from "../repository/User.repository";
 import { EmailService } from "./invitation-email.service";
 import { WorkspaceRole } from "../models/Workspace";
 

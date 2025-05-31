@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
-import projectRepository from "../repository/projectRepository";
+import projectRepository from "../repository/project.repository";
 import WorkspaceMemberRepository from "../repository/workspace-member.repository";
 
 declare global {

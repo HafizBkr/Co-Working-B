@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-import { JsonWebTokenError } from "jsonwebtoken";
 
 dotenv.config();
 

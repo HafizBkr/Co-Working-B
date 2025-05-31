@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import Workspace, { IWorkspace, WorkspaceRole } from "../models/Workspace";
 import WorkspaceMember, { IWorkspaceMember } from "../models/WorkspaceMember";
-import { BaseRepository } from "./baseRepository";
+import { BaseRepository } from "./base.repository";
 
 class WorkspaceRepositoryClass extends BaseRepository<IWorkspace> {
   constructor() {

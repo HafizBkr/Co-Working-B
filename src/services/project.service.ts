@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { projectRepository } from "../repository/projectRepository";
+import { projectRepository } from "../repository/project.repository";
 import { IProject } from "../models/Project";
 
 export interface CreateProjectRequest {

@@ -1,4 +1,4 @@
-import { BaseRepository, IBaseRepository } from "./baseRepository";
+import { BaseRepository, IBaseRepository } from "./base.repository";
 import Task, { ITask } from "../models/Task";
 
 const USER_POPULATE = [

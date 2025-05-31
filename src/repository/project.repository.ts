@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { BaseRepository, IBaseRepository } from "./baseRepository";
+import { BaseRepository, IBaseRepository } from "./base.repository";
 import Project, { IProject } from "../models/Project";
 
 export interface IProjectRepository extends IBaseRepository<IProject> {

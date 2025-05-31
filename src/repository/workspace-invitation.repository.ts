@@ -1,5 +1,7 @@
-import WorkspaceInvitation, { IWorkspaceInvitation } from "../models/WorkspaceInvitation";
-import { BaseRepository } from "./baseRepository";
+import WorkspaceInvitation, {
+  IWorkspaceInvitation,
+} from "../models/WorkspaceInvitation";
+import { BaseRepository } from "./base.repository";
 
 class WorkspaceInvitationRepositoryClass extends BaseRepository<IWorkspaceInvitation> {
   constructor() {
@@ -15,7 +17,7 @@ class WorkspaceInvitationRepositoryClass extends BaseRepository<IWorkspaceInvita
       workspace,
       email: email.toLowerCase().trim(),
       status: "pending",
-      expiresAt: { $gt: new Date() }
+      expiresAt: { $gt: new Date() },
     });
   }
 
@@ -24,9 +26,14 @@ class WorkspaceInvitationRepositoryClass extends BaseRepository<IWorkspaceInvita
   }
 
   async setStatus(token: string, status: string) {
-    return WorkspaceInvitation.findOneAndUpdate({ token }, { status }, { new: true });
+    return WorkspaceInvitation.findOneAndUpdate(
+      { token },
+      { status },
+      { new: true },
+    );
   }
 }
 
-export const WorkspaceInvitationRepository = new WorkspaceInvitationRepositoryClass();
+export const WorkspaceInvitationRepository =
+  new WorkspaceInvitationRepositoryClass();
 export default WorkspaceInvitationRepository;

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { UserRepository } from "../repository/UserRepository";
+import { UserRepository } from "../repository/User.repository";
 import { createAndSendOTP, verifyOTP } from "../utils/otp";
 import { generateToken } from "../utils/jwt";
 import { WorkspaceInvitationService } from "../services/workspace-invitation.service";

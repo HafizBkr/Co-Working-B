@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { taskRepository } from "../repository/taskRepository";
+import { taskRepository } from "../repository/task.repository";
 import { ITask } from "../models/Task";
 import { sendTaskAssignmentEmail } from "../utils/taskAssignmentEmail";
 

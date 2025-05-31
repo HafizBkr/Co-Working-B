@@ -1,5 +1,5 @@
 import mongoose, { Document, Model } from "mongoose";
-import { BaseRepository } from "./baseRepository";
+import { BaseRepository } from "./base.repository";
 import { User } from "../models/user";
 import { hashPassword, comparePassword } from "../utils/hash";
 import { createAndSendOTP } from "../utils/otp";
