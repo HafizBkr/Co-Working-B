@@ -4,20 +4,35 @@ import { WorkspaceInvitationService } from "../services/workspace-invitation.ser
 export class WorkspaceInvitationController {
   static async inviteToWorkspace(req: Request, res: Response): Promise<void> {
     try {
-      const { email, role } = req.body;
+      const { emails, role } = req.body;
       const { workspaceId } = req.params;
       const inviterId = req.user.userId;
       const workspaceName = req.workspace.name;
 
-      const result = await WorkspaceInvitationService.invite(
-        email,
-        workspaceId,
-        role,
-        inviterId,
-        workspaceName,
+      if (!Array.isArray(emails)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "emails must be an array" });
+      }
+
+      const results = await Promise.all(
+        emails.map(async (email) => {
+          try {
+            const result = await WorkspaceInvitationService.invite(
+              email,
+              workspaceId,
+              role,
+              inviterId,
+              workspaceName,
+            );
+            return { email, success: true, data: result };
+          } catch (e: any) {
+            return { email, success: false, message: e.message };
+          }
+        }),
       );
 
-      res.status(201).json({ success: true, data: result });
+      res.status(201).json({ success: true, results });
     } catch (e: any) {
       res.status(400).json({ success: false, message: e.message });
     }
