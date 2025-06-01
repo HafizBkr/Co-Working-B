@@ -94,7 +94,7 @@ src/
 - **Chat/Message** : participants, contenu, workspace, etc.
 - **Invitation** : email, workspace, rôle, statut
 
-## Dépendances principales
+## Dépendances principales .
 
 - express, mongoose, socket.io, jsonwebtoken, bcryptjs, nodemailer, dotenv, typescript
 
