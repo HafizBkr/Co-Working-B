@@ -7,6 +7,7 @@ import workspaceInvitationRoutes from "./routes/workspace-invitation.routes";
 import projectRoutes from "./routes/project.routes";
 import taskRoutes from "./routes/task.routes";
 import serverHealthRoutes from "./routes/serverHealth.routes";
+import chatRoutes from "./routes/chat.routes";
 import {
   errorMiddleware,
   notFoundMiddleware,
@@ -26,6 +27,7 @@ app.use("/api/v1/invitations", workspaceInvitationRoutes);
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/tasks", taskRoutes);
 app.use("/api/v1/health", serverHealthRoutes);
+app.use("/api/v1/chats", chatRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

@@ -91,6 +91,41 @@ export class ChatController {
     }
   }
 
+  static async getChatMessages(req: Request, res: Response): Promise<void> {
+    try {
+      const { chatId } = req.params;
+      const messages = await ChatService.getChatMessages(chatId);
+      res.status(200).json({ success: true, data: messages });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  static async getOrCreateDirectMessage(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    try {
+      const { workspaceId, userId } = req.body;
+      const currentUserId = req.user?.userId;
+      if (!currentUserId || !userId || !workspaceId) {
+        res.status(400).json({
+          success: false,
+          message: "workspaceId and userId are required",
+        });
+        return;
+      }
+      const chat = await ChatService.getOrCreateDirectMessage(
+        workspaceId,
+        currentUserId,
+        userId,
+      );
+      res.status(200).json({ success: true, data: chat });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   static async sendMessage(req: Request, res: Response): Promise<void> {
     try {
       const { chatId } = req.params;

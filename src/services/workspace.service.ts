@@ -3,6 +3,7 @@ import WorkspaceRepository from "../repository/workspace.repository";
 import WorkspaceMemberRepository from "../repository/workspace-member.repository";
 import { WorkspaceRole } from "../models/Workspace";
 import { User } from "../models/user";
+import Chat from "../models/Chat";
 
 export const WorkspaceService = {
   /**
@@ -40,6 +41,14 @@ export const WorkspaceService = {
         },
         session,
       );
+
+      await Chat.create({
+        workspace: workspace._id,
+        participants: [user._id],
+        name: "Général",
+        isDirectMessage: false,
+        createdBy: user._id,
+      });
 
       await session.commitTransaction();
       return workspace;
@@ -127,5 +136,9 @@ export const WorkspaceService = {
     );
   },
 };
+
+/**
+ * Create Aworkspace general chat
+ */
 
 export default WorkspaceService;
