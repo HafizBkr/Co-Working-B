@@ -4,6 +4,7 @@ import WorkspaceMemberRepository from "../repository/workspace-member.repository
 import { UserRepository } from "../repository/User.repository";
 import { EmailService } from "./invitation-email.service";
 import { WorkspaceRole } from "../models/Workspace";
+import Chat from "../models/Chat";
 
 export const WorkspaceInvitationService = {
   async invite(email, workspaceId, role, inviterId, workspaceName) {
@@ -39,6 +40,17 @@ export const WorkspaceInvitationService = {
       invitedBy: inviterId,
       inviteAccepted: false,
     });
+
+    if (existingUser) {
+      await Chat.findOneAndUpdate(
+        {
+          workspace: invitation.workspace,
+          isDirectMessage: false,
+          name: "Général",
+        },
+        { $addToSet: { participants: existingUser._id } },
+      );
+    }
 
     await EmailService.sendInvitationEmail(
       email,
@@ -76,6 +88,15 @@ export const WorkspaceInvitationService = {
     membership.inviteAccepted = true;
     membership.user = userId;
     await membership.save();
+
+    await Chat.findOneAndUpdate(
+      {
+        workspace: invitation.workspace,
+        isDirectMessage: false,
+        name: "Général",
+      },
+      { $addToSet: { participants: userId } },
+    );
 
     await WorkspaceInvitationRepository.setStatus(token, "accepted");
     return true;
@@ -137,6 +158,15 @@ export const WorkspaceInvitationService = {
     membership.inviteAccepted = true;
     membership.user = user._id;
     await membership.save();
+
+    await Chat.findOneAndUpdate(
+      {
+        workspace: invitation.workspace,
+        isDirectMessage: false,
+        name: "Général",
+      },
+      { $addToSet: { participants: user._id } },
+    );
 
     await WorkspaceInvitationRepository.setStatus(invitation.token, "accepted");
 

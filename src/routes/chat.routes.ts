@@ -6,12 +6,9 @@ import { ChatController } from "../controllers/chat.controller";
 
 const router = express.Router();
 
-// Middleware pour vérifier l'accès au chat
 const hasChatAccess: RequestHandler = (req, res, next) => {
   next();
 };
-
-// Handlers
 const createChatHandler: RequestHandler = async (req, res) => {
   await ChatController.createChat(req, res);
 };
@@ -28,11 +25,18 @@ const sendMessageHandler: RequestHandler = async (req, res) => {
   await ChatController.sendMessage(req, res);
 };
 
+const getMessageHandler: RequestHandler = async (req, res) => {
+  await ChatController.getChatMessages(req, res);
+};
+
 const markChatAsReadHandler: RequestHandler = (req, res) => {
   res.status(501).json({ message: "Not implemented yet" });
 };
 
-// Routes de chat
+const getOrCreateDirectMessageHandler: RequestHandler = async (req, res) => {
+  await ChatController.getOrCreateDirectMessage(req, res);
+};
+
 router.post("/", authenticateJWT, createChatHandler);
 
 router.get(
@@ -56,6 +60,15 @@ router.put(
   authenticateJWT,
   hasChatAccess,
   markChatAsReadHandler,
+);
+
+router.post("/dm", authenticateJWT, getOrCreateDirectMessageHandler);
+
+router.get(
+  "/:chatId/messages",
+  authenticateJWT,
+  hasChatAccess,
+  getMessageHandler,
 );
 
 export default router;
