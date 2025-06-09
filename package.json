@@ -5,7 +5,14 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "test:load": "node tests/comprehensive-load-test.js",
+    "test:stress": "artillery run tests/load-tests/stress-test.yml",
+    "test:concurrent": "ts-node tests/concurrent-users-test.ts",
+    "test:websocket": "ts-node tests/websocket-load-test.ts",
+    "optimize:db": "node scripts/add-indexes.js",
+    "clean:db": "node scripts/clean-data.js",
+    "test:setup": "npm run clean:db && npm run optimize:db"
   },
   "dependencies": {
     "@types/nodemailer": "^6.4.17",
