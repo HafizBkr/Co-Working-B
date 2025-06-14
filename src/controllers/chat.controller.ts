@@ -94,7 +94,15 @@ export class ChatController {
   static async getChatMessages(req: Request, res: Response): Promise<void> {
     try {
       const { chatId } = req.params;
+      const userId = req.user?.userId;
+
       const messages = await ChatService.getChatMessages(chatId);
+
+      // Auto-marquer comme lu quand on récupère les messages
+      if (userId) {
+        await ChatService.markMessagesAsRead(chatId, userId);
+      }
+
       res.status(200).json({ success: true, data: messages });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
@@ -123,6 +131,38 @@ export class ChatController {
       res.status(200).json({ success: true, data: chat });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  static async markMessagesAsRead(req: Request, res: Response): Promise<void> {
+    try {
+      const { chatId } = req.params;
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        res.status(400).json({
+          success: false,
+          message: "User ID is required",
+        });
+        return;
+      }
+
+      const modifiedCount = await ChatService.markMessagesAsRead(
+        chatId,
+        userId,
+      );
+
+      res.status(200).json({
+        success: true,
+        message: `${modifiedCount} messages marked as read`,
+        data: { modifiedCount },
+      });
+    } catch (error: any) {
+      console.error("Mark messages as read error:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Failed to mark messages as read",
+      });
     }
   }
 
@@ -157,6 +197,162 @@ export class ChatController {
         success: false,
         message: error.message || "Failed to send message",
       });
+    }
+  }
+
+  // ===== MESSAGE CRUD OPERATIONS =====
+
+  static async getMessageById(req: Request, res: Response): Promise<void> {
+    try {
+      const { messageId } = req.params;
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: "User ID is required",
+        });
+        return;
+      }
+
+      const message = await ChatService.getMessageById(messageId, userId);
+
+      res.status(200).json({
+        success: true,
+        data: message,
+      });
+    } catch (error: any) {
+      console.error("Get message error:", error);
+      if (error.message === "Message not found") {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+      } else if (error.message === "You don't have access to this message") {
+        res.status(403).json({
+          success: false,
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Failed to get message",
+        });
+      }
+    }
+  }
+
+  static async updateMessage(req: Request, res: Response): Promise<void> {
+    try {
+      const { messageId } = req.params;
+      const { content } = req.body;
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: "User ID is required",
+        });
+        return;
+      }
+
+      if (!content || content.trim() === "") {
+        res.status(400).json({
+          success: false,
+          message: "Message content is required",
+        });
+        return;
+      }
+
+      const updatedMessage = await ChatService.updateMessage(
+        messageId,
+        userId,
+        content.trim(),
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Message updated successfully",
+        data: updatedMessage,
+      });
+    } catch (error: any) {
+      console.error("Update message error:", error);
+      if (error.message === "Message not found") {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+      } else if (error.message === "You can only edit your own messages") {
+        res.status(403).json({
+          success: false,
+          message: error.message,
+        });
+      } else if (error.message.includes("too old")) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Failed to update message",
+        });
+      }
+    }
+  }
+
+  static async deleteMessage(req: Request, res: Response): Promise<void> {
+    try {
+      const { messageId } = req.params;
+      const { soft = false } = req.query; // soft delete par query param
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: "User ID is required",
+        });
+        return;
+      }
+
+      let result;
+      if (soft === "true") {
+        result = await ChatService.softDeleteMessage(messageId, userId);
+      } else {
+        result = await ChatService.deleteMessage(messageId, userId);
+      }
+
+      res.status(200).json({
+        success: true,
+        message:
+          soft === "true"
+            ? "Message soft deleted successfully"
+            : "Message deleted successfully",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("Delete message error:", error);
+      if (error.message === "Message not found") {
+        res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+      } else if (error.message === "You can only delete your own messages") {
+        res.status(403).json({
+          success: false,
+          message: error.message,
+        });
+      } else if (error.message.includes("too old")) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Failed to delete message",
+        });
+      }
     }
   }
 }
