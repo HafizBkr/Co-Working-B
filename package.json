@@ -12,7 +12,9 @@
     "test:websocket": "ts-node tests/websocket-load-test.ts",
     "optimize:db": "node scripts/add-indexes.js",
     "clean:db": "node scripts/clean-data.js",
-    "test:setup": "npm run clean:db && npm run optimize:db"
+    "test:setup": "npm run clean:db && npm run optimize:db",
+    "encryption:generate-key": "node scripts/generate-encryption-key.js",
+    "encryption:test": "node scripts/test-encryption.js"
   },
   "dependencies": {
     "@types/nodemailer": "^6.4.17",

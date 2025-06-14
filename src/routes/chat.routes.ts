@@ -3,12 +3,14 @@ import type { RequestHandler } from "express";
 import { authenticateJWT } from "../middleware/auth.middleware";
 import { hasWorkspaceAccess } from "../middleware/workspace.middleware";
 import { ChatController } from "../controllers/chat.controller";
+import { hasMessageAccess } from "../middleware/message.middleware";
 
 const router = express.Router();
 
 const hasChatAccess: RequestHandler = (req, res, next) => {
   next();
 };
+
 const createChatHandler: RequestHandler = async (req, res) => {
   await ChatController.createChat(req, res);
 };
@@ -29,13 +31,28 @@ const getMessageHandler: RequestHandler = async (req, res) => {
   await ChatController.getChatMessages(req, res);
 };
 
-const markChatAsReadHandler: RequestHandler = (req, res) => {
-  res.status(501).json({ message: "Not implemented yet" });
+const markChatAsReadHandler: RequestHandler = async (req, res) => {
+  await ChatController.markMessagesAsRead(req, res);
 };
 
 const getOrCreateDirectMessageHandler: RequestHandler = async (req, res) => {
   await ChatController.getOrCreateDirectMessage(req, res);
 };
+
+// Message CRUD handlers
+const getMessageByIdHandler: RequestHandler = async (req, res) => {
+  await ChatController.getMessageById(req, res);
+};
+
+const updateMessageHandler: RequestHandler = async (req, res) => {
+  await ChatController.updateMessage(req, res);
+};
+
+const deleteMessageHandler: RequestHandler = async (req, res) => {
+  await ChatController.deleteMessage(req, res);
+};
+
+// ===== CHAT ROUTES =====
 
 router.post("/", authenticateJWT, createChatHandler);
 
@@ -69,6 +86,29 @@ router.get(
   authenticateJWT,
   hasChatAccess,
   getMessageHandler,
+);
+
+// ===== MESSAGE CRUD ROUTES =====
+
+router.get(
+  "/messages/:messageId",
+  authenticateJWT,
+  hasMessageAccess,
+  getMessageByIdHandler,
+);
+
+router.put(
+  "/messages/:messageId",
+  authenticateJWT,
+  hasMessageAccess,
+  updateMessageHandler,
+);
+
+router.delete(
+  "/messages/:messageId",
+  authenticateJWT,
+  hasMessageAccess,
+  deleteMessageHandler,
 );
 
 export default router;

@@ -26,7 +26,7 @@ export const connectDB = async () => {
 
     mongoose.set("strictQuery", true);
 
-    console.log("✅ MongoDB connecté avec optimisations de performance");
+    console.log("MongoDB connecté avec optimisations de performance");
 
     if (process.env.NODE_ENV !== "production") {
       mongoose.connection.on("error", (err) => {
