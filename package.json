@@ -19,6 +19,7 @@
   "dependencies": {
     "@types/nodemailer": "^6.4.17",
     "bcryptjs": "^3.0.2",
+    "compression": "^1.8.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
