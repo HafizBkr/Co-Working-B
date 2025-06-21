@@ -19,6 +19,8 @@ import {
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
@@ -27,8 +29,8 @@ app.use(
 app.use(compression());
 
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: process.env.NODE_ENV === "production" ? 500 : 1000, // ✅ Augmenté pour tests
+  windowMs: 1 * 60 * 1000,
+  max: process.env.NODE_ENV === "production" ? 500 : 1000,
   message: {
     success: false,
     message: "Trop de requêtes, veuillez réessayer plus tard",
@@ -43,6 +45,7 @@ const limiter = rateLimit({
     );
   },
 });
+
 app.use("/api", limiter);
 
 app.use(corsMiddleware);
@@ -59,7 +62,6 @@ if (process.env.NODE_ENV !== "production") {
 
 app.use("/api/v1/health", serverHealthRoutes);
 app.use("/api/v1/auth", authRoutes);
-
 app.use("/api/v1/workspaces", workspaceRoutes);
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/tasks", taskRoutes);

@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { IUserDocument } from "../repository/UserRepository";
+import { IUserDocument } from "../repository/User.repository";
 import { config } from "../configs/configs";
 
 const JWT_SECRET = config.jwtSecret;
