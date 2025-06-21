@@ -2,7 +2,7 @@
 
 Co-Workink-P est une application collaborative de gestion d'espaces de travail, de projets et de communication en temps réel, conçue pour les équipes modernes.
 
-## Sommaire
+## Sommaires
 
 - [Fonctionnalités](#fonctionnalités)
 - [Installation](#installation)
