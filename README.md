@@ -98,6 +98,6 @@ src/
 
 - express, mongoose, socket.io, jsonwebtoken, bcryptjs, nodemailer, dotenv, typescript
 
----
+--
 
 Pour plus de détails, consulte le code source de chaque dossier ou fichier spécifique.
