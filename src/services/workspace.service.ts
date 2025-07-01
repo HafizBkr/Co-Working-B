@@ -64,8 +64,22 @@ export const WorkspaceService = {
    * Get all workspaces for a user
    */
   getUserWorkspaces: async (userId: string) => {
-    const workspaces = await WorkspaceRepository.getUserWorkspaces(userId);
-    return workspaces;
+    const createdWorkspaces =
+      await WorkspaceRepository.getUserWorkspaces(userId);
+    const memberships =
+      await WorkspaceMemberRepository.findUserMemberships(userId);
+    const memberWorkspaces = memberships
+      .map((m) => m.workspace)
+      .filter((w) => !!w);
+    const allWorkspacesMap = new Map();
+    createdWorkspaces.forEach((ws) =>
+      allWorkspacesMap.set(ws._id.toString(), ws),
+    );
+    memberWorkspaces.forEach((ws) =>
+      allWorkspacesMap.set(ws._id.toString(), ws),
+    );
+
+    return Array.from(allWorkspacesMap.values());
   },
 
   /**
