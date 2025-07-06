@@ -4,12 +4,9 @@ import { authenticateJWT } from "../middleware/auth.middleware";
 import { hasWorkspaceAccess } from "../middleware/workspace.middleware";
 import { ChatController } from "../controllers/chat.controller";
 import { hasMessageAccess } from "../middleware/message.middleware";
+import { hasChatAccess } from "../middleware/chat.middleware";
 
 const router = express.Router();
-
-const hasChatAccess: RequestHandler = (req, res, next) => {
-  next();
-};
 
 const createChatHandler: RequestHandler = async (req, res) => {
   await ChatController.createChat(req, res);

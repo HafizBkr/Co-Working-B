@@ -3,11 +3,13 @@ import { Server as HttpServer } from "http";
 import jwt from "jsonwebtoken";
 import { config } from "../configs/configs";
 import WorkspaceMemberService from "./workspace-member.service";
+import ChatService from "./chat.service";
 
 interface UserSocket {
   userId: string;
   socketId: string;
   workspaceId?: string;
+  activeChats: string[];
 }
 
 export class RealtimeService {
@@ -57,12 +59,23 @@ export class RealtimeService {
     const user: UserSocket = {
       userId: socket.data.userId,
       socketId: socket.id,
+      activeChats: [],
     };
     this.activeUsers.push(user);
 
     // Join workspace event
     socket.on("join-workspace", async (workspaceId) => {
       this.handleJoinWorkspace(socket, workspaceId);
+    });
+
+    // Join chat event
+    socket.on("join-chat", async (chatId) => {
+      this.handleJoinChat(socket, chatId);
+    });
+
+    // Leave chat event
+    socket.on("leave-chat", async (chatId) => {
+      this.handleLeaveChat(socket, chatId);
     });
 
     // Update user position event
@@ -85,8 +98,8 @@ export class RealtimeService {
     });
 
     // Chat message event
-    socket.on("send-message", (data) => {
-      this.handleSendMessage(socket, data);
+    socket.on("send-message", async (data) => {
+      await this.handleSendMessage(socket, data);
     });
 
     // Start typing event
@@ -99,6 +112,16 @@ export class RealtimeService {
       this.handleTypingStop(socket, data);
     });
 
+    // Update message event
+    socket.on("update-message", async (data) => {
+      await this.handleUpdateMessage(socket, data);
+    });
+
+    // Delete message event
+    socket.on("delete-message", async (data) => {
+      await this.handleDeleteMessage(socket, data);
+    });
+
     // Disconnect event
     socket.on("disconnect", () => {
       this.handleDisconnect(socket);
@@ -107,6 +130,17 @@ export class RealtimeService {
 
   private async handleJoinWorkspace(socket: Socket, workspaceId: string) {
     try {
+      // Vérifier si l'utilisateur a accès au workspace
+      const hasAccess = await WorkspaceMemberService.userHasAccessToWorkspace(
+        workspaceId,
+        socket.data.userId,
+      );
+
+      if (!hasAccess) {
+        socket.emit("error", "You don't have access to this workspace");
+        return;
+      }
+
       // Update the workspace in user data
       const userIndex = this.activeUsers.findIndex(
         (u) => u.socketId === socket.id,
@@ -122,8 +156,78 @@ export class RealtimeService {
       const activeUsers =
         await WorkspaceMemberService.getActiveWorkspaceUsers(workspaceId);
       this.io.to(`workspace-${workspaceId}`).emit("active-users", activeUsers);
+
+      socket.emit("workspace-joined", { workspaceId });
     } catch (error) {
+      console.error("Join workspace error:", error);
       socket.emit("error", "Failed to join workspace");
+    }
+  }
+
+  private async handleJoinChat(socket: Socket, chatId: string) {
+    try {
+      // Vérifier si l'utilisateur a accès au chat
+      const hasAccess = await ChatService.userHasAccessToChat(
+        chatId,
+        socket.data.userId,
+      );
+
+      if (!hasAccess) {
+        socket.emit("error", "You don't have access to this chat");
+        return;
+      }
+
+      // Join the chat room
+      socket.join(`chat-${chatId}`);
+
+      // Update user's active chats
+      const userIndex = this.activeUsers.findIndex(
+        (u) => u.socketId === socket.id,
+      );
+      if (userIndex !== -1) {
+        if (!this.activeUsers[userIndex].activeChats.includes(chatId)) {
+          this.activeUsers[userIndex].activeChats.push(chatId);
+        }
+      }
+
+      // Notify others that user joined the chat
+      socket.to(`chat-${chatId}`).emit("user-joined-chat", {
+        chatId,
+        userId: socket.data.userId,
+      });
+
+      socket.emit("chat-joined", { chatId });
+    } catch (error) {
+      console.error("Join chat error:", error);
+      socket.emit("error", "Failed to join chat");
+    }
+  }
+
+  private async handleLeaveChat(socket: Socket, chatId: string) {
+    try {
+      // Leave the chat room
+      socket.leave(`chat-${chatId}`);
+
+      // Update user's active chats
+      const userIndex = this.activeUsers.findIndex(
+        (u) => u.socketId === socket.id,
+      );
+      if (userIndex !== -1) {
+        this.activeUsers[userIndex].activeChats = this.activeUsers[
+          userIndex
+        ].activeChats.filter((id) => id !== chatId);
+      }
+
+      // Notify others that user left the chat
+      socket.to(`chat-${chatId}`).emit("user-left-chat", {
+        chatId,
+        userId: socket.data.userId,
+      });
+
+      socket.emit("chat-left", { chatId });
+    } catch (error) {
+      console.error("Leave chat error:", error);
+      socket.emit("error", "Failed to leave chat");
     }
   }
 
@@ -142,35 +246,117 @@ export class RealtimeService {
       );
 
       // Broadcast position update to workspace
-      this.io.to(`workspace-${workspaceId}`).emit("user-position", {
+      socket.to(`workspace-${workspaceId}`).emit("user-position", {
         userId: socket.data.userId,
         position,
       });
     } catch (error) {
+      console.error("Update position error:", error);
       socket.emit("error", "Failed to update position");
     }
   }
 
-  private handleSendMessage(
+  private async handleSendMessage(
     socket: Socket,
-    data: { chatId: string; content: string; attachments?: string[] },
+    data: {
+      chatId: string;
+      content: string;
+      attachments?: string[];
+      tempId?: string;
+    },
   ) {
     try {
-      const { chatId, content, attachments } = data;
+      const { chatId, content, attachments, tempId } = data;
+
+      // Vérifier si l'utilisateur a accès au chat
+      const hasAccess = await ChatService.userHasAccessToChat(
+        chatId,
+        socket.data.userId,
+      );
+
+      if (!hasAccess) {
+        socket.emit("error", "You don't have access to this chat");
+        return;
+      }
+
+      // Sauvegarder le message en base de données
+      const savedMessage = await ChatService.sendMessage(
+        chatId,
+        socket.data.userId,
+        content,
+        attachments,
+      );
 
       // Broadcast message to chat room
       this.io.to(`chat-${chatId}`).emit("new-message", {
-        chatId,
-        sender: socket.data.userId,
-        content,
-        attachments,
+        ...savedMessage,
         timestamp: new Date(),
       });
 
-      // Note: In a real implementation, you would save the message to the database here
-      // through a MessageService or repository
+      // Confirmation à l'expéditeur
+      socket.emit("message-sent", {
+        messageId: savedMessage._id,
+        chatId,
+        tempId, // Pour la synchronisation côté client
+      });
     } catch (error) {
+      console.error("Send message error:", error);
       socket.emit("error", "Failed to send message");
+    }
+  }
+
+  private async handleUpdateMessage(
+    socket: Socket,
+    data: { messageId: string; content: string },
+  ) {
+    try {
+      const { messageId, content } = data;
+
+      // Utiliser le service ChatService pour mettre à jour le message
+      const updatedMessage = await ChatService.updateMessage(
+        messageId,
+        socket.data.userId,
+        content,
+      );
+
+      // Le broadcast est déjà géré dans ChatService.updateMessage
+      // Confirmation à l'expéditeur
+      socket.emit("message-updated-success", {
+        messageId,
+        updatedMessage,
+      });
+    } catch (error) {
+      console.error("Update message error:", error);
+      socket.emit("error", error.message || "Failed to update message");
+    }
+  }
+
+  private async handleDeleteMessage(
+    socket: Socket,
+    data: { messageId: string; soft?: boolean },
+  ) {
+    try {
+      const { messageId, soft = false } = data;
+
+      let result;
+      if (soft) {
+        result = await ChatService.softDeleteMessage(
+          messageId,
+          socket.data.userId,
+        );
+      } else {
+        result = await ChatService.deleteMessage(messageId, socket.data.userId);
+      }
+
+      // Le broadcast est déjà géré dans ChatService
+      // Confirmation à l'expéditeur
+      socket.emit("message-deleted-success", {
+        messageId,
+        result,
+      });
+    } catch (error) {
+      console.error("Delete message error:", error);
+      socket.emit("error", error.message || "Failed to delete message");
     }
   }
 
@@ -178,12 +364,20 @@ export class RealtimeService {
     try {
       const { chatId } = data;
 
+      // Vérifier que l'utilisateur est dans le chat
+      const user = this.activeUsers.find((u) => u.socketId === socket.id);
+      if (!user || !user.activeChats.includes(chatId)) {
+        socket.emit("error", "You are not in this chat");
+        return;
+      }
+
       // Broadcast typing status to chat room except the sender
       socket.to(`chat-${chatId}`).emit("user-typing", {
         chatId,
         userId: socket.data.userId,
       });
     } catch (error) {
+      console.error("Typing start error:", error);
       socket.emit("error", "Failed to update typing status");
     }
   }
@@ -192,12 +386,19 @@ export class RealtimeService {
     try {
       const { chatId } = data;
 
+      // Vérifier que l'utilisateur est dans le chat
+      const user = this.activeUsers.find((u) => u.socketId === socket.id);
+      if (!user || !user.activeChats.includes(chatId)) {
+        return; // Pas d'erreur ici, l'utilisateur a pu quitter le chat
+      }
+
       // Broadcast typing stopped to chat room except the sender
       socket.to(`chat-${chatId}`).emit("user-stopped-typing", {
         chatId,
         userId: socket.data.userId,
       });
     } catch (error) {
+      console.error("Typing stop error:", error);
       socket.emit("error", "Failed to update typing status");
     }
   }
@@ -208,10 +409,16 @@ export class RealtimeService {
     );
 
     if (userIndex !== -1) {
-      const workspaceId = this.activeUsers[userIndex].workspaceId;
+      const user = this.activeUsers[userIndex];
+      const { workspaceId, activeChats } = user;
 
-      // Remove user from active users
-      this.activeUsers.splice(userIndex, 1);
+      // Notify all active chats that user disconnected
+      activeChats.forEach((chatId) => {
+        socket.to(`chat-${chatId}`).emit("user-left-chat", {
+          chatId,
+          userId: socket.data.userId,
+        });
+      });
 
       // Notify workspace that user disconnected
       if (workspaceId) {
@@ -219,6 +426,9 @@ export class RealtimeService {
           .to(`workspace-${workspaceId}`)
           .emit("user-disconnected", socket.data.userId);
       }
+
+      // Remove user from active users
+      this.activeUsers.splice(userIndex, 1);
     }
 
     console.log(`User disconnected: ${socket.data.userId}`);
@@ -257,6 +467,31 @@ export class RealtimeService {
     return this.activeUsers
       .filter((user) => user.workspaceId === workspaceId)
       .map((user) => user.userId);
+  }
+
+  /**
+   * Get all active users in a chat
+   */
+  public getActiveChatUsers(chatId: string) {
+    return this.activeUsers
+      .filter((user) => user.activeChats.includes(chatId))
+      .map((user) => user.userId);
+  }
+
+  /**
+   * Force a user to leave a chat (for moderation)
+   */
+  public forceLeaveChat(userId: string, chatId: string) {
+    const user = this.activeUsers.find((u) => u.userId === userId);
+    if (user) {
+      const socket = this.io.sockets.sockets.get(user.socketId);
+      if (socket) {
+        socket.leave(`chat-${chatId}`);
+        socket.emit("forced-leave-chat", { chatId, reason: "Moderation" });
+      }
+      // Update user's active chats
+      user.activeChats = user.activeChats.filter((id) => id !== chatId);
+    }
   }
 }
 

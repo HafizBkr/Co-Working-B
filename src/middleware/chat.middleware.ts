@@ -1,42 +1,61 @@
-import { Request, Response, NextFunction } from 'express';
-import Chat from '../models/Chat';
-import mongoose from 'mongoose';
+import { Request, Response, NextFunction, RequestHandler } from "express";
+import Chat from "../models/Chat";
+import mongoose from "mongoose";
+import { WorkspaceMemberService } from "../services/workspace-member.service";
 
-// Extend Request interface to include chat info
 declare global {
   namespace Express {
     interface Request {
       chat?: any;
+      user?: { userId?: string };
     }
   }
 }
 
-// Check if user has access to the chat
-export const hasChatAccess = async (req: Request, res: Response, next: NextFunction) => {
+// Déclare la fonction comme RequestHandler explicitement
+export const hasChatAccess: RequestHandler = async (req, res, next) => {
   try {
-    if (!req.user?.userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const chatId = req.params.chatId;
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+      return res.status(400).json({ message: "Invalid chat ID" });
+    }
 
-    // Find the chat
-    const chat = await Chat.findById(chatId);
+    const chat = await Chat.findById(chatId).select("participants workspace");
     if (!chat) {
-      return res.status(404).json({ message: 'Chat not found' });
+      return res.status(404).json({ message: "Chat not found" });
     }
 
-    // Check if user is a participant of the chat
-    if (!chat.participants.includes(new mongoose.Types.ObjectId(req.user.userId))) {
-      return res.status(403).json({ message: 'You do not have access to this chat' });
+    // Vérifier si l'utilisateur est participant du chat
+    const isParticipant = chat.participants.some((participantId: any) =>
+      participantId.equals(new mongoose.Types.ObjectId(userId)),
+    );
+    if (!isParticipant) {
+      return res
+        .status(403)
+        .json({ message: "You do not have access to this chat" });
     }
 
-    // Attach chat to request object
+    // Vérifier si l'utilisateur fait partie du workspace
+    const hasAccessToWorkspace =
+      await WorkspaceMemberService.userHasAccessToWorkspace(
+        chat.workspace.toString(),
+        userId,
+      );
+    if (!hasAccessToWorkspace) {
+      return res.status(403).json({
+        message: "You do not have access to this workspace chat",
+      });
+    }
+
     req.chat = chat;
-
     next();
   } catch (error) {
-    console.error('Chat access check error:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("Chat access check error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };

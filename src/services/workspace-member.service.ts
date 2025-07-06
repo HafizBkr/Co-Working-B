@@ -97,6 +97,34 @@ export const WorkspaceMemberService = {
   },
 
   /**
+   * Check if a user is member of a workspace
+   */
+  userHasAccessToWorkspace: async (
+    workspaceId: string,
+    userId: string,
+  ): Promise<boolean> => {
+    const membership = await WorkspaceMemberRepository.findMembership(
+      workspaceId,
+      userId,
+    );
+    return !!membership; // true si membre trouvé, sinon false
+  },
+
+  /**
+   * Get active users of a workspace (ex: users active in last 10 min)
+   */
+  getActiveWorkspaceUsers: async (workspaceId: string) => {
+    const activeThreshold = new Date(Date.now() - 10 * 60 * 1000); // 10 minutes ago
+    return WorkspaceMemberRepository.model
+      .find({
+        workspace: workspaceId,
+        lastActive: { $gte: activeThreshold },
+      })
+      .populate("user", "name email profilePicture username")
+      .exec();
+  },
+
+  /**
    * Update user position in workspace
    */
   updateUserPosition: async (

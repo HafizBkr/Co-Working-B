@@ -1,6 +1,7 @@
 import Chat from "../models/Chat";
 import Message from "../models/Message";
 import { realtimeService } from "../server";
+import { WorkspaceMemberService } from "./workspace-member.service";
 
 export const ChatService = {
   /**
@@ -53,6 +54,27 @@ export const ChatService = {
       "participants",
       "name email profilePicture username",
     );
+  },
+
+  /**
+   * Check if user has access to a chat
+   */
+  userHasAccessToChat: async (
+    chatId: string,
+    userId: string,
+  ): Promise<boolean> => {
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return false;
+    }
+
+    // Comme chat.participants est probablement un tableau d'ObjectId,
+    // il faut comparer les IDs en string pour éviter les erreurs de comparaison.
+    const isParticipant = chat.participants.some(
+      (participantId: any) => participantId.toString() === userId,
+    );
+
+    return isParticipant;
   },
 
   /**
@@ -110,8 +132,8 @@ export const ChatService = {
       content: populatedMessage.getDecryptedContent(), // Déchiffrer pour l'envoi temps réel
     };
 
-    // Notify chat participants about the new message
-    realtimeService.broadcastToChat(chatId, "new-message", messageForRealtime);
+    // Note: Le broadcast est maintenant géré par le RealtimeService
+    // lors de l'événement "send-message" du socket
 
     return messageForRealtime;
   },
