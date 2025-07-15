@@ -51,24 +51,11 @@ export const WorkspaceInvitationService = {
       throw new Error("User is already a member of this workspace");
     }
 
-    if (
-      existingMembership &&
-      existingMembership.inviteAccepted === false &&
-      existingInvitation
-    ) {
-      await EmailService.sendInvitationEmail(
-        email,
-        workspaceName,
-        inviterId,
-        existingInvitation.token,
-        !!existingUser,
-      );
-
-      return {
-        reinvited: true,
-        email,
-        message: "Invitation resent to existing user",
-      };
+    // SUPPRESSION de l'invitation précédente si elle existe et n'est pas acceptée
+    if (existingInvitation) {
+      await WorkspaceInvitationRepository.deleteOne({
+        _id: existingInvitation._id,
+      });
     }
 
     const token = uuidv4();

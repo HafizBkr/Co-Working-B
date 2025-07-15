@@ -73,6 +73,7 @@ router.post(
   "/workspaces/:workspaceId/projects",
   authenticateJWT,
   hasWorkspaceAccess,
+  hasAdminAccess,
   createProjectHandler,
 );
 
@@ -146,6 +147,7 @@ router.post(
   "/projects/:projectId/duplicate",
   authenticateJWT,
   hasProjectAccess,
+  hasAdminAccess,
   duplicateProjectHandler,
 );
 

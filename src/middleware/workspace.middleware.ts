@@ -2,17 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import WorkspaceRepository from "../repository/workspace.repository";
 import WorkspaceMemberRepository from "../repository/workspace-member.repository";
-import WorkspaceService from "../services/workspace.service";
-
-// Extend Request interface to include workspace info
-declare global {
-  namespace Express {
-    interface Request {
-      workspace?: any;
-      workspaceMember?: any;
-    }
-  }
-}
+import { WorkspaceRole } from "../models/Workspace";
 
 // Check if user has access to the workspace
 export const hasWorkspaceAccess = async (
@@ -74,9 +64,11 @@ export const hasAdminAccess = async (
 ): Promise<void> => {
   if (
     !req.workspaceMember ||
-    !WorkspaceService.hasAdminAccess(req.workspaceMember.role)
+    ![WorkspaceRole.ADMIN, WorkspaceRole.OWNER].includes(
+      req.workspaceMember.role,
+    )
   ) {
-    res.status(403).json({ message: "Admin access required" });
+    res.status(403).json({ message: "Admin or Owner access required" });
     return;
   }
   next();

@@ -48,7 +48,7 @@ class WorkspaceMemberRepositoryClass extends BaseRepository<IWorkspaceMember> {
   async getWorkspaceMembers(workspaceId: string): Promise<IWorkspaceMember[]> {
     return this.model
       .find({ workspace: workspaceId })
-      .populate("user", "name email profilePicture")
+      .populate("user", "username email avatar")
       .exec();
   }
 

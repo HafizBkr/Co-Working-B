@@ -42,7 +42,7 @@ export class ProjectRepository
     return this.model
       .find({ workspace: workspaceId })
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -51,7 +51,7 @@ export class ProjectRepository
     return this.model
       .find({ createdBy: userId })
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -66,7 +66,7 @@ export class ProjectRepository
         createdBy: userId,
       })
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -82,7 +82,7 @@ export class ProjectRepository
         ],
       })
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -107,7 +107,7 @@ export class ProjectRepository
         ],
       })
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .sort({ startDate: 1 })
       .exec();
   }
@@ -124,7 +124,7 @@ export class ProjectRepository
     return this.model
       .findByIdAndUpdate(id, updateData, { new: true })
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .exec();
   }
 
@@ -133,7 +133,7 @@ export class ProjectRepository
     return this.model
       .findById(project._id)
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .exec() as Promise<IProject>;
   }
 
@@ -215,7 +215,7 @@ export class ProjectRepository
     return this.model
       .findByIdAndUpdate(id, cleanUpdateData, { new: true })
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .exec();
   }
 
@@ -223,7 +223,7 @@ export class ProjectRepository
     return this.model
       .findById(id)
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .exec();
   }
 
@@ -233,7 +233,7 @@ export class ProjectRepository
     return this.model
       .findOne(filter)
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .exec();
   }
 
@@ -241,7 +241,7 @@ export class ProjectRepository
     return this.model
       .find(filter)
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -253,7 +253,7 @@ export class ProjectRepository
     return this.model
       .findByIdAndUpdate(id, update, { new: true })
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .exec();
   }
 
@@ -264,7 +264,7 @@ export class ProjectRepository
     return this.model
       .findOneAndUpdate(filter, update, { new: true })
       .populate("workspace", "name")
-      .populate("createdBy", "name email")
+      .populate("createdBy", "username avatar email")
       .exec();
   }
 }

@@ -2,7 +2,10 @@ import express, { RequestHandler } from "express";
 import { TaskController } from "../controllers/task.controller";
 import { authenticateJWT } from "../middleware/auth.middleware";
 import { hasProjectAccess } from "../middleware/project.middleware";
-import { hasWorkspaceAccess } from "../middleware/workspace.middleware";
+import {
+  hasAdminAccess,
+  hasWorkspaceAccess,
+} from "../middleware/workspace.middleware";
 
 const router = express.Router();
 
@@ -50,9 +53,10 @@ const changeTaskStatusHandler: RequestHandler = async (req, res) => {
 // Routes
 
 router.post(
-  "/projects/:projectId/tasks",
+  "/workspaces/:workspaceId/projects/:projectId/tasks",
   authenticateJWT,
-  hasProjectAccess,
+  hasWorkspaceAccess,
+  hasAdminAccess,
   createTaskHandler,
 );
 
@@ -84,7 +88,13 @@ router.put("/tasks/:taskId", authenticateJWT, updateTaskHandler);
 
 router.delete("/tasks/:taskId", authenticateJWT, deleteTaskHandler);
 
-router.patch("/tasks/:taskId/assign", authenticateJWT, assignTaskHandler);
+router.patch(
+  "/workspaces/:workspaceId/tasks/:taskId/assign",
+  authenticateJWT,
+  hasWorkspaceAccess,
+  hasAdminAccess,
+  assignTaskHandler,
+);
 
 router.patch("/tasks/:taskId/status", authenticateJWT, changeTaskStatusHandler);
 

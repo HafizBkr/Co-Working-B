@@ -144,11 +144,6 @@ export const WorkspaceService = {
   /**
    * Check if user has admin access to workspace
    */
-  hasAdminAccess: (role: string) => {
-    return [WorkspaceRole.OWNER, WorkspaceRole.ADMIN].includes(
-      role as WorkspaceRole,
-    );
-  },
 };
 
 /**
