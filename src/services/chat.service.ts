@@ -37,13 +37,43 @@ export const ChatService = {
   },
 
   /**
-   * Get all chats for a user in a workspace
+   * Get all chats for a user in a workspace with last messages
    */
   getUserChats: async (workspaceId: string, userId: string) => {
-    return Chat.find({
+    // Récupérer tous les chats de l'utilisateur
+    const chats = await Chat.find({
       workspace: workspaceId,
       participants: userId,
     }).populate("participants", "name email profilePicture username");
+
+    // Récupérer le dernier message pour chaque chat
+    const chatsWithLastMessage = await Promise.all(
+      chats.map(async (chat) => {
+        const lastMessage = await Message.findOne({ chat: chat._id })
+          .sort({ createdAt: -1 })
+          .populate("sender", "name email profilePicture username")
+          .limit(1);
+
+        const unreadCount = await Message.countDocuments({
+          chat: chat._id,
+          readBy: { $ne: userId },
+        });
+
+        const chatObj = chat.toObject();
+        return {
+          ...chatObj,
+          lastMessage: lastMessage
+            ? {
+                ...lastMessage.toObject(),
+                content: lastMessage.getDecryptedContent(),
+              }
+            : null,
+          unreadCount,
+        };
+      }),
+    );
+
+    return chatsWithLastMessage;
   },
 
   /**
@@ -135,7 +165,36 @@ export const ChatService = {
     // Note: Le broadcast est maintenant géré par le RealtimeService
     // lors de l'événement "send-message" du socket
 
+    // Mettre à jour les statistiques du chat pour ce message
+    await this.updateChatLastMessage(chatId);
+
     return messageForRealtime;
+  },
+
+  /**
+   * Met à jour le dernier message d'un chat
+   */
+  updateChatLastMessage: async (chatId: string) => {
+    try {
+      const lastMessage = await Message.findOne({ chat: chatId })
+        .sort({ createdAt: -1 })
+        .populate("sender", "name email profilePicture username");
+
+      if (lastMessage) {
+        // Mettre à jour le chat avec la référence au dernier message
+        // Note: Nous n'avons pas de champ lastMessage dans le schéma, donc
+        // cette opération est juste pour des fonctionnalités futures
+        await Chat.findByIdAndUpdate(
+          chatId,
+          { $set: { updatedAt: new Date() } },
+          { new: true },
+        );
+      }
+      return lastMessage;
+    } catch (error) {
+      console.error("Error updating chat last message:", error);
+      return null;
+    }
   },
 
   /**
@@ -173,10 +232,15 @@ export const ChatService = {
       .sort({ createdAt: 1 });
 
     // Déchiffrer le contenu de tous les messages
-    return messages.map((message) => ({
+    const decryptedMessages = messages.map((message) => ({
       ...message.toObject(),
       content: message.getDecryptedContent(),
     }));
+
+    // Mettre à jour les statistiques du chat
+    await ChatService.updateChatLastMessage(chatId);
+
+    return decryptedMessages;
   },
 
   /**
@@ -284,6 +348,9 @@ export const ChatService = {
       messageForRealtime,
     );
 
+    // Mettre à jour les statistiques du chat si c'est le dernier message
+    await ChatService.updateChatLastMessage(message.chat.toString());
+
     return messageForRealtime;
   },
 
@@ -320,6 +387,9 @@ export const ChatService = {
       chatId,
       deletedBy: userId,
     });
+
+    // Mettre à jour les statistiques du chat
+    await ChatService.updateChatLastMessage(chatId);
 
     return { messageId, deleted: true };
   },
@@ -366,6 +436,9 @@ export const ChatService = {
       "message-soft-deleted",
       messageForRealtime,
     );
+
+    // Mettre à jour les statistiques du chat
+    await ChatService.updateChatLastMessage(message.chat.toString());
 
     return messageForRealtime;
   },

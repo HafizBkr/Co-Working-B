@@ -10,6 +10,7 @@ interface UserSocket {
   socketId: string;
   workspaceId?: string;
   activeChats: string[];
+  lastSeen: Date;
 }
 
 export class RealtimeService {
@@ -60,6 +61,7 @@ export class RealtimeService {
       userId: socket.data.userId,
       socketId: socket.id,
       activeChats: [],
+      lastSeen: new Date(),
     };
     this.activeUsers.push(user);
 
@@ -147,6 +149,7 @@ export class RealtimeService {
       );
       if (userIndex !== -1) {
         this.activeUsers[userIndex].workspaceId = workspaceId;
+        this.activeUsers[userIndex].lastSeen = new Date();
       }
 
       // Join the workspace room
@@ -188,6 +191,7 @@ export class RealtimeService {
         if (!this.activeUsers[userIndex].activeChats.includes(chatId)) {
           this.activeUsers[userIndex].activeChats.push(chatId);
         }
+        this.activeUsers[userIndex].lastSeen = new Date();
       }
 
       // Notify others that user joined the chat
@@ -216,6 +220,7 @@ export class RealtimeService {
         this.activeUsers[userIndex].activeChats = this.activeUsers[
           userIndex
         ].activeChats.filter((id) => id !== chatId);
+        this.activeUsers[userIndex].lastSeen = new Date();
       }
 
       // Notify others that user left the chat
@@ -293,6 +298,20 @@ export class RealtimeService {
         timestamp: new Date(),
       });
 
+      // Broadcast last message update to workspace members
+      const chat = await ChatService.getChatById(chatId);
+      if (chat && chat.workspace) {
+        this.broadcastToWorkspace(chat.workspace.toString(), "chat-updated", {
+          chatId,
+          lastMessage: {
+            _id: savedMessage._id,
+            content: savedMessage.content,
+            sender: savedMessage.sender,
+            createdAt: savedMessage.createdAt,
+          },
+        });
+      }
+
       // Confirmation à l'expéditeur
       socket.emit("message-sent", {
         messageId: savedMessage._id,
@@ -325,6 +344,23 @@ export class RealtimeService {
         messageId,
         updatedMessage,
       });
+
+      // Mettre à jour le dernier message pour tous les membres du workspace
+      const chat = await ChatService.getChatById(
+        updatedMessage.chat.toString(),
+      );
+      if (chat && chat.workspace) {
+        this.broadcastToWorkspace(chat.workspace.toString(), "chat-updated", {
+          chatId: updatedMessage.chat.toString(),
+          lastMessage: {
+            _id: updatedMessage._id,
+            content: updatedMessage.content,
+            sender: updatedMessage.sender,
+            createdAt: updatedMessage.createdAt,
+            updatedAt: updatedMessage.updatedAt,
+          },
+        });
+      }
     } catch (error) {
       console.error("Update message error:", error);
       socket.emit("error", error.message || "Failed to update message");
@@ -354,6 +390,32 @@ export class RealtimeService {
         messageId,
         result,
       });
+
+      // Mettre à jour le dernier message pour tous les membres du workspace si nécessaire
+      if (result.chatId) {
+        const chat = await ChatService.getChatById(result.chatId);
+        if (chat && chat.workspace) {
+          // Récupérer le nouveau dernier message
+          const lastMessage = await ChatService.updateChatLastMessage(
+            result.chatId,
+          );
+          if (lastMessage) {
+            this.broadcastToWorkspace(
+              chat.workspace.toString(),
+              "chat-updated",
+              {
+                chatId: result.chatId,
+                lastMessage: {
+                  _id: lastMessage._id,
+                  content: lastMessage.getDecryptedContent(),
+                  sender: lastMessage.sender,
+                  createdAt: lastMessage.createdAt,
+                },
+              },
+            );
+          }
+        }
+      }
     } catch (error) {
       console.error("Delete message error:", error);
       socket.emit("error", error.message || "Failed to delete message");
@@ -410,6 +472,7 @@ export class RealtimeService {
 
     if (userIndex !== -1) {
       const user = this.activeUsers[userIndex];
+      user.lastSeen = new Date(); // Mettre à jour le dernier moment de présence
       const { workspaceId, activeChats } = user;
 
       // Notify all active chats that user disconnected

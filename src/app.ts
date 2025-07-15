@@ -12,6 +12,7 @@ import projectRoutes from "./routes/project.routes";
 import taskRoutes from "./routes/task.routes";
 import serverHealthRoutes from "./routes/serverHealth.routes";
 import chatRoutes from "./routes/chat.routes";
+import chatMembersRoutes from "./routes/chat-members.routes";
 import {
   errorMiddleware,
   notFoundMiddleware,
@@ -66,6 +67,7 @@ app.use("/api/v1/workspaces", workspaceRoutes);
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/tasks", taskRoutes);
 app.use("/api/v1/chats", chatRoutes);
+app.use("/api/v1/chat-members", chatMembersRoutes);
 app.use("/api/v1/invitations", workspaceInvitationRoutes);
 
 app.use(notFoundMiddleware);
