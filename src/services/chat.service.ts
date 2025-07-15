@@ -37,6 +37,7 @@ export const ChatService = {
   },
 
   /**
+<<<<<<< HEAD
    * Get all chats for a user in a workspace
    */
   getUserChats: async (workspaceId: string, userId: string) => {
@@ -44,6 +45,45 @@ export const ChatService = {
       workspace: workspaceId,
       participants: userId,
     }).populate("participants", "name email profilePicture username");
+=======
+   * Get all chats for a user in a workspace with last messages
+   */
+  getUserChats: async (workspaceId: string, userId: string) => {
+    // Récupérer tous les chats de l'utilisateur
+    const chats = await Chat.find({
+      workspace: workspaceId,
+      participants: userId,
+    }).populate("participants", "name email profilePicture username");
+
+    // Récupérer le dernier message pour chaque chat
+    const chatsWithLastMessage = await Promise.all(
+      chats.map(async (chat) => {
+        const lastMessage = await Message.findOne({ chat: chat._id })
+          .sort({ createdAt: -1 })
+          .populate("sender", "name email profilePicture username")
+          .limit(1);
+
+        const unreadCount = await Message.countDocuments({
+          chat: chat._id,
+          readBy: { $ne: userId },
+        });
+
+        const chatObj = chat.toObject();
+        return {
+          ...chatObj,
+          lastMessage: lastMessage
+            ? {
+                ...lastMessage.toObject(),
+                content: lastMessage.getDecryptedContent(),
+              }
+            : null,
+          unreadCount,
+        };
+      }),
+    );
+
+    return chatsWithLastMessage;
+>>>>>>> 53f2f0fa9675c95da4d412b46494516a375ac650
   },
 
   /**
@@ -135,10 +175,45 @@ export const ChatService = {
     // Note: Le broadcast est maintenant géré par le RealtimeService
     // lors de l'événement "send-message" du socket
 
+<<<<<<< HEAD
+=======
+    // Mettre à jour les statistiques du chat pour ce message
+    await this.updateChatLastMessage(chatId);
+
+>>>>>>> 53f2f0fa9675c95da4d412b46494516a375ac650
     return messageForRealtime;
   },
 
   /**
+<<<<<<< HEAD
+=======
+   * Met à jour le dernier message d'un chat
+   */
+  updateChatLastMessage: async (chatId: string) => {
+    try {
+      const lastMessage = await Message.findOne({ chat: chatId })
+        .sort({ createdAt: -1 })
+        .populate("sender", "name email profilePicture username");
+
+      if (lastMessage) {
+        // Mettre à jour le chat avec la référence au dernier message
+        // Note: Nous n'avons pas de champ lastMessage dans le schéma, donc
+        // cette opération est juste pour des fonctionnalités futures
+        await Chat.findByIdAndUpdate(
+          chatId,
+          { $set: { updatedAt: new Date() } },
+          { new: true },
+        );
+      }
+      return lastMessage;
+    } catch (error) {
+      console.error("Error updating chat last message:", error);
+      return null;
+    }
+  },
+
+  /**
+>>>>>>> 53f2f0fa9675c95da4d412b46494516a375ac650
    * Get or create a direct message chat between two users in a workspace
    */
   getOrCreateDirectMessage: async (
@@ -173,10 +248,22 @@ export const ChatService = {
       .sort({ createdAt: 1 });
 
     // Déchiffrer le contenu de tous les messages
+<<<<<<< HEAD
     return messages.map((message) => ({
       ...message.toObject(),
       content: message.getDecryptedContent(),
     }));
+=======
+    const decryptedMessages = messages.map((message) => ({
+      ...message.toObject(),
+      content: message.getDecryptedContent(),
+    }));
+
+    // Mettre à jour les statistiques du chat
+    await ChatService.updateChatLastMessage(chatId);
+
+    return decryptedMessages;
+>>>>>>> 53f2f0fa9675c95da4d412b46494516a375ac650
   },
 
   /**
@@ -284,6 +371,12 @@ export const ChatService = {
       messageForRealtime,
     );
 
+<<<<<<< HEAD
+=======
+    // Mettre à jour les statistiques du chat si c'est le dernier message
+    await ChatService.updateChatLastMessage(message.chat.toString());
+
+>>>>>>> 53f2f0fa9675c95da4d412b46494516a375ac650
     return messageForRealtime;
   },
 
@@ -321,6 +414,12 @@ export const ChatService = {
       deletedBy: userId,
     });
 
+<<<<<<< HEAD
+=======
+    // Mettre à jour les statistiques du chat
+    await ChatService.updateChatLastMessage(chatId);
+
+>>>>>>> 53f2f0fa9675c95da4d412b46494516a375ac650
     return { messageId, deleted: true };
   },
 
@@ -367,6 +466,12 @@ export const ChatService = {
       messageForRealtime,
     );
 
+<<<<<<< HEAD
+=======
+    // Mettre à jour les statistiques du chat
+    await ChatService.updateChatLastMessage(message.chat.toString());
+
+>>>>>>> 53f2f0fa9675c95da4d412b46494516a375ac650
     return messageForRealtime;
   },
 };
