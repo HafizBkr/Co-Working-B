@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: coworkink_app
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb+srv://hafiz:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      - PORT=5000
+    depends_on:
+      - mongo
+    volumes:
+      - .:/app
+    command: npm run dev
+
+  mongo:
+    image: mongo
+    container_name: coworkink_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:

@@ -1,0 +1,42 @@
+{
+  "name": "co-workink-p",
+  "version": "1.0.0",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test:load": "node tests/comprehensive-load-test.js",
+    "test:stress": "artillery run tests/load-tests/stress-test.yml",
+    "test:concurrent": "ts-node tests/concurrent-users-test.ts",
+    "test:websocket": "ts-node tests/websocket-load-test.ts",
+    "optimize:db": "node scripts/add-indexes.js",
+    "clean:db": "node scripts/clean-data.js",
+    "test:setup": "npm run clean:db && npm run optimize:db",
+    "encryption:generate-key": "node scripts/generate-encryption-key.js",
+    "encryption:test": "node scripts/test-encryption.js"
+  },
+  "dependencies": {
+    "@types/nodemailer": "^6.4.17",
+    "bcryptjs": "^3.0.2",
+    "compression": "^1.8.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.16.0",
+    "mongoose": "^8.15.0",
+    "nodemailer": "^7.0.3",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.15.18",
+    "@types/uuid": "^10.0.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
+  }
+}

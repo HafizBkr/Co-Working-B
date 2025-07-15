@@ -1,0 +1,78 @@
+config:
+  target: "http://localhost:5000" # ✅ Port corrigé à 5000
+  phases:
+    # Phase 1: Warm-up - 10 utilisateurs par seconde pendant 30 secondes
+    - duration: 30
+      arrivalRate: 10
+      name: "Warm-up phase"
+
+    # Phase 2: Load test - 50 utilisateurs par seconde pendant 2 minutes
+    - duration: 120
+      arrivalRate: 50
+      name: "Load test phase"
+
+    # Phase 3: Stress test - 100 utilisateurs par seconde pendant 1 minute
+    - duration: 60
+      arrivalRate: 100
+      name: "Stress test phase"
+
+    # Phase 4: Spike test - 200 utilisateurs par seconde pendant 30 secondes
+    - duration: 30
+      arrivalRate: 200
+      name: "Spike test phase"
+
+  processor: "./test-processor.js"
+
+scenarios:
+  - name: "API Health Check"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/v1/health"
+          expect:
+            - statusCode: 200
+
+  - name: "User Authentication Flow"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/v1/auth/register"
+          json:
+            email: "test{{ $randomString() }}@example.com"
+            password: "TestPassword123!"
+            username: "user{{ $randomString() }}"
+          capture:
+            json: "$.token"
+            as: "authToken"
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "test@example.com"
+            password: "TestPassword123!"
+
+  - name: "Workspace Operations"
+    weight: 25
+    flow:
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "test@example.com"
+            password: "TestPassword123!"
+          capture:
+            json: "$.token"
+            as: "authToken"
+      - get:
+          url: "/api/v1/workspaces"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+  - name: "Real-time Chat Simulation"
+    weight: 25
+    flow:
+      - get:
+          url: "/api/v1/chats"
+      - post:
+          url: "/api/v1/chats"
+          json:
+            message: "Test message {{ $randomString() }}"
+            timestamp: "{{ $timestamp() }}"

@@ -1,0 +1,84 @@
+config:
+  target: 'http://localhost:5000'  # ✅ Port corrigé à 5000
+  phases:
+    # Montée progressive jusqu'à 500 utilisateurs simultanés
+    - duration: 60
+      arrivalRate: 50
+      rampTo: 100
+      name: "Ramp up to 100 users/sec"
+
+    - duration: 120
+      arrivalRate: 100
+      rampTo: 300
+      name: "Ramp up to 300 users/sec"
+
+    - duration: 180
+      arrivalRate: 300
+      rampTo: 500
+      name: "Ramp up to 500 users/sec"
+
+    - duration: 300
+      arrivalRate: 500
+      name: "Sustained load at 500 users/sec"
+
+    - duration: 60
+      arrivalRate: 500
+      rampTo: 50
+      name: "Ramp down"
+
+  processor: "./test-processor.js"
+
+scenarios:
+  - name: "Heavy Database Operations"
+    weight: 40
+    flow:
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "test@example.com"
+            password: "TestPassword123!"
+          capture:
+            json: "$.token"
+            as: "authToken"
+      - loop:
+          - get:
+              url: "/api/v1/workspaces"
+              headers:
+                Authorization: "Bearer {{ authToken }}"
+          - get:
+              url: "/api/v1/projects"
+              headers:
+                Authorization: "Bearer {{ authToken }}"
+          - get:
+              url: "/api/v1/tasks"
+              headers:
+                Authorization: "Bearer {{ authToken }}"
+          count: 5
+
+  - name: "Concurrent User Registration"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/v1/auth/register"
+          json:
+            email: "stress{{ $randomString() }}@example.com"
+            password: "StressTest123!"
+            username: "stressuser{{ $randomString() }}"
+
+  - name: "Mixed Operations"
+    weight: 30
+    flow:
+      - get:
+          url: "/api/v1/health"
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "test@example.com"
+            password: "TestPassword123!"
+          capture:
+            json: "$.token"
+            as: "authToken"
+      - get:
+          url: "/api/v1/workspaces"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
