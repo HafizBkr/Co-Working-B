@@ -6,7 +6,14 @@ export class ProjectController {
     try {
       const { name, description, startDate, endDate } = req.body;
       const { workspaceId } = req.params;
-      const createdBy = req.user.userId;
+      const createdBy = req.user?.userId;
+
+      if (!createdBy) {
+        res
+          .status(401)
+          .json({ success: false, message: "Utilisateur non authentifié" });
+        return;
+      }
 
       const projectData = {
         name,
@@ -155,7 +162,15 @@ export class ProjectController {
     try {
       const { projectId } = req.params;
       const { newName } = req.body;
-      const createdBy = req.user.userId;
+      const createdBy = req.user?.userId;
+
+      if (!createdBy) {
+        res.status(401).json({
+          success: false,
+          message: "Utilisateur non authentifié",
+        });
+        return;
+      }
 
       if (!newName) {
         res.status(400).json({

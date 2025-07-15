@@ -160,7 +160,11 @@ export class RealtimeService {
       socket.emit("workspace-joined", { workspaceId });
     } catch (error) {
       console.error("Join workspace error:", error);
-      socket.emit("error", "Failed to join workspace");
+      if (error instanceof Error) {
+        socket.emit("error", error.message);
+      } else {
+        socket.emit("error", "Failed to join workspace");
+      }
     }
   }
 
@@ -199,7 +203,11 @@ export class RealtimeService {
       socket.emit("chat-joined", { chatId });
     } catch (error) {
       console.error("Join chat error:", error);
-      socket.emit("error", "Failed to join chat");
+      if (error instanceof Error) {
+        socket.emit("error", error.message);
+      } else {
+        socket.emit("error", "Failed to join chat");
+      }
     }
   }
 
@@ -227,7 +235,11 @@ export class RealtimeService {
       socket.emit("chat-left", { chatId });
     } catch (error) {
       console.error("Leave chat error:", error);
-      socket.emit("error", "Failed to leave chat");
+      if (error instanceof Error) {
+        socket.emit("error", error.message);
+      } else {
+        socket.emit("error", "Failed to leave chat");
+      }
     }
   }
 
@@ -252,7 +264,11 @@ export class RealtimeService {
       });
     } catch (error) {
       console.error("Update position error:", error);
-      socket.emit("error", "Failed to update position");
+      if (error instanceof Error) {
+        socket.emit("error", error.message);
+      } else {
+        socket.emit("error", "Failed to update position");
+      }
     }
   }
 
@@ -301,7 +317,11 @@ export class RealtimeService {
       });
     } catch (error) {
       console.error("Send message error:", error);
-      socket.emit("error", "Failed to send message");
+      if (error instanceof Error) {
+        socket.emit("error", error.message);
+      } else {
+        socket.emit("error", "Failed to send message");
+      }
     }
   }
 
@@ -327,7 +347,11 @@ export class RealtimeService {
       });
     } catch (error) {
       console.error("Update message error:", error);
-      socket.emit("error", error.message || "Failed to update message");
+      if (error instanceof Error) {
+        socket.emit("error", error.message);
+      } else {
+        socket.emit("error", "Failed to update message");
+      }
     }
   }
 
@@ -356,7 +380,11 @@ export class RealtimeService {
       });
     } catch (error) {
       console.error("Delete message error:", error);
-      socket.emit("error", error.message || "Failed to delete message");
+      if (error instanceof Error) {
+        socket.emit("error", error.message);
+      } else {
+        socket.emit("error", "Failed to delete message");
+      }
     }
   }
 
@@ -378,7 +406,11 @@ export class RealtimeService {
       });
     } catch (error) {
       console.error("Typing start error:", error);
-      socket.emit("error", "Failed to update typing status");
+      if (error instanceof Error) {
+        socket.emit("error", error.message);
+      } else {
+        socket.emit("error", "Failed to update typing status");
+      }
     }
   }
 
@@ -399,7 +431,11 @@ export class RealtimeService {
       });
     } catch (error) {
       console.error("Typing stop error:", error);
-      socket.emit("error", "Failed to update typing status");
+      if (error instanceof Error) {
+        socket.emit("error", error.message);
+      } else {
+        socket.emit("error", "Failed to update typing status");
+      }
     }
   }
 

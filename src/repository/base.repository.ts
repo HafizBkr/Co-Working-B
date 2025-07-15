@@ -4,9 +4,11 @@ import {
   FilterQuery,
   UpdateQuery,
   QueryOptions,
+  Query,
 } from "mongoose";
 
 export interface IBaseRepository<T extends Document> {
+  // Méthodes classiques
   findById(id: string): Promise<T | null>;
   findOne(filter: FilterQuery<T>): Promise<T | null>;
   find(filter: FilterQuery<T>): Promise<T[]>;
@@ -18,11 +20,17 @@ export interface IBaseRepository<T extends Document> {
   deleteOne(filter: FilterQuery<T>): Promise<T | null>;
   deleteMany(filter: FilterQuery<T>): Promise<number>;
   countDocuments(filter: FilterQuery<T>): Promise<number>;
+
+  // Méthodes pour chaîner .populate/.select
+  findByIdQuery(id: string): Query<T | null, T>;
+  findOneQuery(filter: FilterQuery<T>): Query<T | null, T>;
+  findQuery(filter: FilterQuery<T>): Query<T[], T>;
 }
 
 export class BaseRepository<T extends Document> implements IBaseRepository<T> {
   constructor(protected readonly model: Model<T>) {}
 
+  // Méthodes classiques
   async findById(id: string): Promise<T | null> {
     return this.model.findById(id).exec();
   }
@@ -73,5 +81,18 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
 
   async countDocuments(filter: FilterQuery<T>): Promise<number> {
     return this.model.countDocuments(filter).exec();
+  }
+
+  // Méthodes pour chaîner .populate/.select
+  findByIdQuery(id: string): Query<T | null, T> {
+    return this.model.findById(id);
+  }
+
+  findOneQuery(filter: FilterQuery<T>): Query<T | null, T> {
+    return this.model.findOne(filter);
+  }
+
+  findQuery(filter: FilterQuery<T>): Query<T[], T> {
+    return this.model.find(filter);
   }
 }

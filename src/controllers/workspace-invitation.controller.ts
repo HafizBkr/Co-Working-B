@@ -6,13 +6,29 @@ export class WorkspaceInvitationController {
     try {
       const { emails, role } = req.body;
       const { workspaceId } = req.params;
-      const inviterId = req.user.userId;
-      const workspaceName = req.workspace.name;
+      const inviterId = req.user?.userId;
+      const workspaceName = req.workspace?.name;
+
+      if (!inviterId) {
+        res
+          .status(401)
+          .json({ success: false, message: "Utilisateur non authentifié" });
+        return;
+      }
+
+      if (!workspaceName) {
+        res.status(400).json({
+          success: false,
+          message: "Nom de l'espace de travail manquant",
+        });
+        return;
+      }
 
       if (!Array.isArray(emails)) {
-        return res
+        res
           .status(400)
           .json({ success: false, message: "emails must be an array" });
+        return;
       }
 
       const results = await Promise.all(
@@ -44,7 +60,14 @@ export class WorkspaceInvitationController {
   ): Promise<void> {
     try {
       const { token } = req.body;
-      const userId = req.user.userId;
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        res
+          .status(401)
+          .json({ success: false, message: "Utilisateur non authentifié" });
+        return;
+      }
 
       await WorkspaceInvitationService.accept(token, userId);
 

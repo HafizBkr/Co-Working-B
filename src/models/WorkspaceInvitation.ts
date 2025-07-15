@@ -8,14 +8,24 @@ export interface IWorkspaceInvitation extends Document {
   invitedBy: mongoose.Types.ObjectId;
   token: string;
   expiresAt: Date;
-  status: "pending" | "accepted" | "declined" | "expired";
+  status:
+    | "pending"
+    | "accepted"
+    | "rejected"
+    | "expired"
+    | "waiting_verification";
   createdAt: Date;
   updatedAt: Date;
 }
 
 const workspaceInvitationSchema = new Schema<IWorkspaceInvitation>(
   {
-    email: { type: String, required: true, lowercase: true, trim: true },
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+    },
     workspace: {
       type: Schema.Types.ObjectId,
       ref: "Workspace",
@@ -26,21 +36,50 @@ const workspaceInvitationSchema = new Schema<IWorkspaceInvitation>(
       enum: Object.values(WorkspaceRole),
       default: WorkspaceRole.MEMBER,
     },
-    invitedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    token: { type: String, required: true, unique: true },
-    expiresAt: { type: Date, required: true },
+    invitedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    token: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+    },
     status: {
       type: String,
-      enum: ["pending", "accepted", "declined", "expired"],
+      enum: [
+        "pending",
+        "accepted",
+        "rejected",
+        "expired",
+        "waiting_verification",
+      ],
       default: "pending",
     },
   },
   { timestamps: true },
 );
 
-workspaceInvitationSchema.index({ workspace: 1, email: 1 }, { unique: true });
+// Index to ensure unique email per workspace
+workspaceInvitationSchema.index(
+  { workspace: 1, email: 1 },
+  { unique: true, sparse: true },
+);
 
-export default mongoose.model<IWorkspaceInvitation>(
+// Index for token lookups
+workspaceInvitationSchema.index({ token: 1 }, { unique: true });
+
+// Index for expiry cleanup
+workspaceInvitationSchema.index({ expiresAt: 1 });
+
+const WorkspaceInvitation = mongoose.model<IWorkspaceInvitation>(
   "WorkspaceInvitation",
   workspaceInvitationSchema,
 );
+
+export default WorkspaceInvitation;

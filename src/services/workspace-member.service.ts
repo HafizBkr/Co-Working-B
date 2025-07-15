@@ -1,18 +1,14 @@
 import WorkspaceMemberRepository from "../repository/workspace-member.repository";
 import WorkspaceInvitation from "../models/WorkspaceInvitation";
 import { WorkspaceRole } from "../models/Workspace";
+import { IUser } from "../models/user";
+import { PopulatedWorkspaceMember } from "../types/populated-workspace-member";
 
 export const WorkspaceMemberService = {
-  /**
-   * Get all members of a workspace
-   */
   getWorkspaceMembers: async (workspaceId: string) => {
     return WorkspaceMemberRepository.getWorkspaceMembers(workspaceId);
   },
 
-  /**
-   * Update a member's role
-   */
   updateMemberRole: async (
     workspaceId: string,
     userId: string,
@@ -22,65 +18,44 @@ export const WorkspaceMemberService = {
       workspaceId,
       userId,
     );
-    if (!membership) {
-      throw new Error("Membership not found");
-    }
+    if (!membership) throw new Error("Membership not found");
     membership.role = role;
     membership.lastActive = new Date();
     return membership.save();
   },
 
-  /**
-   * Remove a member from workspace by membership ID
-   * Also removes the associated invitation to prevent duplicate key errors
-   */
   removeMemberById: async (memberId: string) => {
-    const memberWithUser = await WorkspaceMemberRepository.model
-      .findById(memberId)
-      .populate("user", "email")
-      .exec();
-
-    if (!memberWithUser) {
-      throw new Error("Membership not found");
-    }
-
+    const memberWithUser = (await WorkspaceMemberRepository.findByIdWithUser(
+      memberId,
+    )) as PopulatedWorkspaceMember | null;
+    if (!memberWithUser) throw new Error("Membership not found");
     const userEmail = memberWithUser.user?.email;
-
     await WorkspaceMemberRepository.deleteById(memberId);
     if (userEmail && memberWithUser.workspace) {
+      const workspaceId =
+        typeof memberWithUser.workspace === "object" &&
+        "_id" in memberWithUser.workspace
+          ? (memberWithUser.workspace as any)._id
+          : memberWithUser.workspace;
       try {
         await WorkspaceInvitation.deleteOne({
-          workspace: memberWithUser.workspace,
+          workspace: workspaceId,
           email: userEmail.toLowerCase().trim(),
         });
       } catch (error) {
         console.warn("Could not delete associated invitation:", error);
       }
     }
-
     return memberWithUser;
   },
 
-  /**
-   * Remove a member from workspace (legacy method - by userId)
-   * Also removes the associated invitation to prevent duplicate key errors
-   */
   removeMember: async (workspaceId: string, userId: string) => {
-    // Récupérer le membre avec les données utilisateur
-    const memberWithUser = await WorkspaceMemberRepository.model
-      .findOne({
-        workspace: workspaceId,
-        user: userId,
-      })
-      .populate("user", "email")
-      .exec();
-
-    if (!memberWithUser) {
-      throw new Error("Membership not found");
-    }
-
+    const memberWithUser = (await WorkspaceMemberRepository.findOneWithUser(
+      workspaceId,
+      userId,
+    )) as PopulatedWorkspaceMember | null;
+    if (!memberWithUser) throw new Error("Membership not found");
     const userEmail = memberWithUser.user?.email;
-
     await WorkspaceMemberRepository.deleteOneMembership(workspaceId, userId);
     if (userEmail) {
       try {
@@ -92,13 +67,9 @@ export const WorkspaceMemberService = {
         console.warn("Could not delete associated invitation:", error);
       }
     }
-
     return memberWithUser;
   },
 
-  /**
-   * Check if a user is member of a workspace
-   */
   userHasAccessToWorkspace: async (
     workspaceId: string,
     userId: string,
@@ -107,26 +78,17 @@ export const WorkspaceMemberService = {
       workspaceId,
       userId,
     );
-    return !!membership; // true si membre trouvé, sinon false
+    return !!membership;
   },
 
-  /**
-   * Get active users of a workspace (ex: users active in last 10 min)
-   */
   getActiveWorkspaceUsers: async (workspaceId: string) => {
-    const activeThreshold = new Date(Date.now() - 10 * 60 * 1000); // 10 minutes ago
-    return WorkspaceMemberRepository.model
-      .find({
-        workspace: workspaceId,
-        lastActive: { $gte: activeThreshold },
-      })
-      .populate("user", "name email profilePicture username")
-      .exec();
+    const activeThreshold = new Date(Date.now() - 10 * 60 * 1000);
+    return WorkspaceMemberRepository.getActiveWorkspaceUsers(
+      workspaceId,
+      activeThreshold,
+    );
   },
 
-  /**
-   * Update user position in workspace
-   */
   updateUserPosition: async (
     workspaceId: string,
     userId: string,
@@ -136,9 +98,7 @@ export const WorkspaceMemberService = {
       workspaceId,
       userId,
     );
-    if (!membership) {
-      throw new Error("User is not a member of this workspace");
-    }
+    if (!membership) throw new Error("User is not a member of this workspace");
     membership.currentPosition = position;
     membership.lastActive = new Date();
     return membership.save();

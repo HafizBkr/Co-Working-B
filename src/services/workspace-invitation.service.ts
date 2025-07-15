@@ -1,50 +1,103 @@
 import { v4 as uuidv4 } from "uuid";
+import mongoose, { Types } from "mongoose";
 import WorkspaceInvitationRepository from "../repository/workspace-invitation.repository";
 import WorkspaceMemberRepository from "../repository/workspace-member.repository";
 import { UserRepository } from "../repository/User.repository";
 import { EmailService } from "./invitation-email.service";
 import { WorkspaceRole } from "../models/Workspace";
 import Chat from "../models/Chat";
+import { IUser } from "../models/user"; // Si tu as un type User
+
+export interface InviteResult {
+  reinvited?: boolean;
+  invited?: boolean;
+  email: string;
+  message: string;
+}
+
+export interface RegisterAndAcceptResult {
+  message: string;
+  userId: Types.ObjectId;
+  email: string;
+  needEmailVerification: boolean;
+}
+
+export interface ActivateInvitationResult {
+  success: boolean;
+  message: string;
+}
 
 export const WorkspaceInvitationService = {
-  async invite(email, workspaceId, role, inviterId, workspaceName) {
+  async invite(
+    email: string,
+    workspaceId: string,
+    role: WorkspaceRole,
+    inviterId: string,
+    workspaceName: string,
+  ): Promise<InviteResult> {
     const userRepository = new UserRepository();
     const existingUser = await userRepository.findOne({ email });
 
     const existingMembership =
       await WorkspaceMemberRepository.findMembershipByEmail(workspaceId, email);
-    if (existingMembership) {
-      throw new Error("User is already invited to this workspace");
+
+    const existingInvitation = await WorkspaceInvitationRepository.findOne({
+      workspace: new mongoose.Types.ObjectId(workspaceId),
+      email: email.toLowerCase(),
+      status: "pending",
+    });
+
+    if (existingMembership && existingMembership.inviteAccepted === true) {
+      throw new Error("User is already a member of this workspace");
     }
 
-    // Générer un token
-    const token = uuidv4();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    if (
+      existingMembership &&
+      existingMembership.inviteAccepted === false &&
+      existingInvitation
+    ) {
+      await EmailService.sendInvitationEmail(
+        email,
+        workspaceName,
+        inviterId,
+        existingInvitation.token,
+        !!existingUser,
+      );
 
-    // Créer l’invitation
+      return {
+        reinvited: true,
+        email,
+        message: "Invitation resent to existing user",
+      };
+    }
+
+    const token = uuidv4();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 jours
+
     const invitation = await WorkspaceInvitationRepository.createInvitation({
       email,
-      workspace: workspaceId,
+      workspace: new mongoose.Types.ObjectId(workspaceId),
       role: role || WorkspaceRole.MEMBER,
-      invitedBy: inviterId,
+      invitedBy: new mongoose.Types.ObjectId(inviterId),
       token,
       expiresAt,
       status: "pending",
     });
 
-    await WorkspaceMemberRepository.createMembership({
-      workspace: workspaceId,
-      user: existingUser ? existingUser._id : undefined,
-      email,
-      role: role || WorkspaceRole.MEMBER,
-      invitedBy: inviterId,
-      inviteAccepted: false,
-    });
-
+    // Crée un membre si l'utilisateur existe
     if (existingUser) {
+      await WorkspaceMemberRepository.createMembership({
+        workspace: new mongoose.Types.ObjectId(workspaceId),
+        user: existingUser._id as mongoose.Types.ObjectId,
+        email,
+        role: role || WorkspaceRole.MEMBER,
+        invitedBy: new mongoose.Types.ObjectId(inviterId),
+        inviteAccepted: false,
+      });
+
       await Chat.findOneAndUpdate(
         {
-          workspace: invitation.workspace,
+          workspace: new mongoose.Types.ObjectId(workspaceId),
           isDirectMessage: false,
           name: "Général",
         },
@@ -57,12 +110,17 @@ export const WorkspaceInvitationService = {
       workspaceName,
       inviterId,
       token,
+      !!existingUser,
     );
 
-    return invitation;
+    return {
+      invited: true,
+      email,
+      message: "Invitation sent successfully",
+    };
   },
 
-  async accept(token, userId) {
+  async accept(token: string, userId: string): Promise<boolean> {
     const invitation = await WorkspaceInvitationRepository.findByToken(token);
     if (
       !invitation ||
@@ -78,7 +136,7 @@ export const WorkspaceInvitationService = {
     }
 
     const membership = await WorkspaceMemberRepository.findMembershipByEmail(
-      invitation.workspace,
+      invitation.workspace.toString(),
       invitation.email,
     );
     if (!membership) {
@@ -86,7 +144,7 @@ export const WorkspaceInvitationService = {
     }
 
     membership.inviteAccepted = true;
-    membership.user = userId;
+    membership.user = new mongoose.Types.ObjectId(userId);
     await membership.save();
 
     await Chat.findOneAndUpdate(
@@ -95,14 +153,17 @@ export const WorkspaceInvitationService = {
         isDirectMessage: false,
         name: "Général",
       },
-      { $addToSet: { participants: userId } },
+      { $addToSet: { participants: new mongoose.Types.ObjectId(userId) } },
     );
 
     await WorkspaceInvitationRepository.setStatus(token, "accepted");
     return true;
   },
 
-  async registerAndAccept(token, userData) {
+  async registerAndAccept(
+    token: string,
+    userData: IUser,
+  ): Promise<RegisterAndAcceptResult> {
     const invitation = await WorkspaceInvitationRepository.findByToken(token);
     if (
       !invitation ||
@@ -131,12 +192,15 @@ export const WorkspaceInvitationService = {
     return {
       message:
         "Un email de vérification vous a été envoyé. Veuillez valider votre compte pour finaliser l'invitation.",
-      userId: user._id,
+      userId: user._id as mongoose.Types.ObjectId,
       email: user.email,
       needEmailVerification: true,
     };
   },
-  async activateInvitationForUser(email: string) {
+
+  async activateInvitationForUser(
+    email: string,
+  ): Promise<ActivateInvitationResult> {
     const invitation = await WorkspaceInvitationRepository.findOne({
       email: email.toLowerCase(),
       status: { $in: ["pending", "waiting_verification"] },
@@ -146,17 +210,17 @@ export const WorkspaceInvitationService = {
       throw new Error("Aucune invitation en attente pour cet email");
 
     const userRepository = new UserRepository();
-    const user = await userRepository.findOne({ email });
+    const user = (await userRepository.findOne({ email })) as IUser | null;
     if (!user) throw new Error("Utilisateur introuvable");
 
     const membership = await WorkspaceMemberRepository.findMembershipByEmail(
-      invitation.workspace,
+      invitation.workspace.toString(),
       email,
     );
     if (!membership) throw new Error("Membership introuvable");
 
     membership.inviteAccepted = true;
-    membership.user = user._id;
+    membership.user = user._id as Types.ObjectId;
     await membership.save();
 
     await Chat.findOneAndUpdate(
@@ -165,7 +229,7 @@ export const WorkspaceInvitationService = {
         isDirectMessage: false,
         name: "Général",
       },
-      { $addToSet: { participants: user._id } },
+      { $addToSet: { participants: user._id as Types.ObjectId } },
     );
 
     await WorkspaceInvitationRepository.setStatus(invitation.token, "accepted");

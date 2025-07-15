@@ -20,12 +20,14 @@ export const EmailService = {
     workspaceName: string,
     inviterId: string,
     invitationToken: string,
+    isExistingUser: boolean,
   ) => {
     const inviter = await userRepository.findById(inviterId);
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
 
-    const invitationLink = `${frontendUrl}/invite?token=${invitationToken}`;
-
+    const route = isExistingUser ? "invite" : "invite-register";
+    const invitationLink = `${frontendUrl.replace(/\/$/, "")}/${route}?token=${invitationToken}`;
+    console.log(invitationLink);
     const mailOptions = {
       from: `"Co-Workink" <${config.emailUser}>`,
       to: toEmail,
@@ -33,8 +35,14 @@ export const EmailService = {
       html: `
         <h1>You've been invited to join ${workspaceName}</h1>
         <p>${inviter?.username} (${inviter?.email}) has invited you to collaborate on the "${workspaceName}" workspace.</p>
-        <p>Click the button below to accept the invitation:</p>
-        <a href="${invitationLink}" style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Accept Invitation</a>
+        <p>Click the button below to ${
+          isExistingUser
+            ? "accept the invitation"
+            : "create your account and join"
+        }:</p>
+        <a href="${invitationLink}" style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
+          ${isExistingUser ? "Accept Invitation" : "Register & Join"}
+        </a>
         <p>If you didn't request this invitation, you can safely ignore this email.</p>
         <p>This invitation link will expire in 7 days.</p>
       `,

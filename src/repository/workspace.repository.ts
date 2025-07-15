@@ -45,6 +45,17 @@ class WorkspaceRepositoryClass extends BaseRepository<IWorkspace> {
     return this.model.findByIdAndDelete(workspaceId, options).exec();
   }
 
+  async deleteWorkspaceMemberships(
+    workspaceId: string,
+    session?: mongoose.ClientSession,
+  ): Promise<number> {
+    const options = session ? { session } : {};
+    const result = await this.model
+      .deleteMany({ workspace: workspaceId }, options)
+      .exec();
+    return result.deletedCount;
+  }
+
   /**
    * Get workspaces created by user
    */

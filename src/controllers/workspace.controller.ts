@@ -10,6 +10,14 @@ export class WorkspaceController {
       console.log("Données reçues:", JSON.stringify(workspaceData, null, 2));
       console.log("User ID:", userId);
 
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: "User ID is required",
+        });
+        return;
+      }
+
       const workspace = await WorkspaceService.createWorkspace(
         workspaceData,
         userId,
@@ -34,7 +42,7 @@ export class WorkspaceController {
       const userId = req.user?.userId;
 
       if (!userId) {
-        res.status(400).json({
+        res.status(401).json({
           success: false,
           message: "User ID is required",
         });
@@ -59,7 +67,25 @@ export class WorkspaceController {
   static async getWorkspaceById(req: Request, res: Response): Promise<void> {
     try {
       const workspace = req.workspace;
-      const role = req.workspaceMember.role;
+      const workspaceMember = req.workspaceMember;
+
+      if (!workspace) {
+        res.status(404).json({
+          success: false,
+          message: "Workspace not found",
+        });
+        return;
+      }
+
+      if (!workspaceMember || !workspaceMember.role) {
+        res.status(403).json({
+          success: false,
+          message: "Workspace member or role not found",
+        });
+        return;
+      }
+
+      const role = workspaceMember.role;
 
       const workspaceDetails = await WorkspaceService.getWorkspaceDetails(
         workspace,

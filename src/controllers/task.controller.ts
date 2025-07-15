@@ -7,7 +7,7 @@ export class TaskController {
       const data = {
         ...req.body,
         project: req.params.projectId,
-        createdBy: req.user.userId,
+        createdBy: req.user?.userId,
       };
       const task = await TaskService.createTask(data);
       res.status(201).json({ success: true, data: task });

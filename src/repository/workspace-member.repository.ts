@@ -2,15 +2,13 @@ import mongoose from "mongoose";
 import WorkspaceMember, { IWorkspaceMember } from "../models/WorkspaceMember";
 import { WorkspaceRole } from "../models/Workspace";
 import { BaseRepository } from "./base.repository";
+import { IUser } from "../models/user";
 
 class WorkspaceMemberRepositoryClass extends BaseRepository<IWorkspaceMember> {
   constructor() {
     super(WorkspaceMember);
   }
 
-  /**
-   * Find membership by email
-   */
   async findMembershipByEmail(
     workspaceId: string,
     email: string,
@@ -21,9 +19,6 @@ class WorkspaceMemberRepositoryClass extends BaseRepository<IWorkspaceMember> {
     });
   }
 
-  /**
-   * Create workspace membership with session support
-   */
   async createMembership(
     memberData: Partial<IWorkspaceMember>,
     session?: mongoose.ClientSession,
@@ -32,54 +27,31 @@ class WorkspaceMemberRepositoryClass extends BaseRepository<IWorkspaceMember> {
     return (await this.model.create([memberData], options))[0];
   }
 
-  /**
-   * Find user memberships with populated workspace data
-   */
   async findUserMemberships(userId: string): Promise<IWorkspaceMember[]> {
     return this.model
-      .find({
-        user: userId,
-        inviteAccepted: true,
-      })
+      .find({ user: userId, inviteAccepted: true })
       .populate("workspace")
       .exec();
   }
 
-  /**
-   * Find a specific membership
-   */
   async findMembership(
     workspaceId: string,
     userId: string,
   ): Promise<IWorkspaceMember | null> {
-    return this.findOne({
-      workspace: workspaceId,
-      user: userId,
-    });
+    return this.findOne({ workspace: workspaceId, user: userId });
   }
 
   async deleteOneMembership(workspaceId: string, userId: string) {
-    return WorkspaceMember.deleteOne({
-      workspace: workspaceId,
-      user: userId,
-    });
+    return WorkspaceMember.deleteOne({ workspace: workspaceId, user: userId });
   }
 
-  /**
-   * Get all members for a workspace with populated user data
-   */
   async getWorkspaceMembers(workspaceId: string): Promise<IWorkspaceMember[]> {
     return this.model
-      .find({
-        workspace: workspaceId,
-      })
+      .find({ workspace: workspaceId })
       .populate("user", "name email profilePicture")
       .exec();
   }
 
-  /**
-   * Update member role with populated user data
-   */
   async updateMemberRole(
     memberId: string,
     role: WorkspaceRole,
@@ -90,9 +62,26 @@ class WorkspaceMemberRepositoryClass extends BaseRepository<IWorkspaceMember> {
       .exec();
   }
 
-  /**
-   * Delete all memberships for a workspace with session support
-   */
+  async getActiveWorkspaceUsers(workspaceId: string, activeThreshold: Date) {
+    return this.model
+      .find({ workspace: workspaceId, lastActive: { $gte: activeThreshold } })
+      .populate<{ user: IUser }>("user", "name email profilePicture username")
+      .exec();
+  }
+
+  async findByIdWithUser(memberId: string): Promise<IWorkspaceMember | null> {
+    return this.model.findById(memberId).populate("user", "email").exec();
+  }
+
+  async findOneWithUser(
+    workspaceId: string,
+    userId: string,
+  ): Promise<IWorkspaceMember | null> {
+    return this.model
+      .findOne({ workspace: workspaceId, user: userId })
+      .populate("user", "email")
+      .exec();
+  }
   async deleteWorkspaceMemberships(
     workspaceId: string,
     session?: mongoose.ClientSession,
@@ -102,6 +91,28 @@ class WorkspaceMemberRepositoryClass extends BaseRepository<IWorkspaceMember> {
       .deleteMany({ workspace: workspaceId }, options)
       .exec();
     return result.deletedCount;
+  }
+
+  async updateUserPosition(
+    workspaceId: string,
+    userId: string,
+    position: { x: number; y: number },
+  ): Promise<IWorkspaceMember | null> {
+    return this.model
+      .findOneAndUpdate(
+        { workspace: workspaceId, user: userId },
+        { currentPosition: position, lastActive: new Date() },
+        { new: true },
+      )
+      .exec();
+  }
+
+  async deleteByIdWithUser(memberId: string): Promise<IWorkspaceMember | null> {
+    // Optionnel : pour supprimer et retourner le membre peuplé
+    return this.model
+      .findByIdAndDelete(memberId)
+      .populate("user", "email")
+      .exec();
   }
 }
 

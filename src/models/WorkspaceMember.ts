@@ -3,8 +3,8 @@ import { WorkspaceRole } from "./Workspace";
 
 export interface IWorkspaceMember extends Document {
   workspace: mongoose.Types.ObjectId;
-  user?: mongoose.Types.ObjectId; // Rendre optionnel
-  email: string; // Email toujours requis
+  user?: mongoose.Types.ObjectId;
+  email: string;
   role: WorkspaceRole;
   invitedBy: mongoose.Types.ObjectId;
   inviteAccepted: boolean;

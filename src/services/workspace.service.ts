@@ -73,10 +73,10 @@ export const WorkspaceService = {
       .filter((w) => !!w);
     const allWorkspacesMap = new Map();
     createdWorkspaces.forEach((ws) =>
-      allWorkspacesMap.set(ws._id.toString(), ws),
+      allWorkspacesMap.set(ws._id?.toString(), ws),
     );
     memberWorkspaces.forEach((ws) =>
-      allWorkspacesMap.set(ws._id.toString(), ws),
+      allWorkspacesMap.set(ws._id?.toString(), ws),
     );
 
     return Array.from(allWorkspacesMap.values());

@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 declare global {
   namespace Express {
@@ -6,6 +6,10 @@ declare global {
       user?: { userId: string };
       workspace?: any;
       workspaceMember?: any;
+      chat?: {
+        participants: mongoose.Types.ObjectId[];
+        workspace: mongoose.Types.ObjectId;
+      };
     }
   }
 }

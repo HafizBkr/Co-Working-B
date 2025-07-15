@@ -38,10 +38,14 @@ export const ProjectService = {
   async createProject(data: CreateProjectRequest): Promise<IProject> {
     try {
       await this.validateProjectCreation(data);
-
       return await projectRepository.createProject(data);
     } catch (error) {
-      throw new Error(`Erreur lors de la création du projet: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors de la création du projet: ${error.message}`,
+        );
+      }
+      throw new Error("Erreur lors de la création du projet: erreur inconnue");
     }
   },
 
@@ -53,8 +57,13 @@ export const ProjectService = {
 
       return await projectRepository.findById(id);
     } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors de la récupération du projet: ${error.message}`,
+        );
+      }
       throw new Error(
-        `Erreur lors de la récupération du projet: ${error.message}`,
+        "Erreur lors de la récupération du projet: erreur inconnue",
       );
     }
   },
@@ -85,8 +94,13 @@ export const ProjectService = {
 
       return projects;
     } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors de la récupération des projets: ${error.message}`,
+        );
+      }
       throw new Error(
-        `Erreur lors de la récupération des projets: ${error.message}`,
+        "Erreur lors de la récupération des projets: erreur inconnue",
       );
     }
   },
@@ -100,8 +114,13 @@ export const ProjectService = {
 
       return await projectRepository.updateProject(id, data);
     } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors de la mise à jour du projet: ${error.message}`,
+        );
+      }
       throw new Error(
-        `Erreur lors de la mise à jour du projet: ${error.message}`,
+        "Erreur lors de la mise à jour du projet: erreur inconnue",
       );
     }
   },
@@ -122,8 +141,13 @@ export const ProjectService = {
       const deletedProject = await projectRepository.deleteById(id);
       return !!deletedProject;
     } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors de la suppression du projet: ${error.message}`,
+        );
+      }
       throw new Error(
-        `Erreur lors de la suppression du projet: ${error.message}`,
+        "Erreur lors de la suppression du projet: erreur inconnue",
       );
     }
   },
@@ -164,8 +188,13 @@ export const ProjectService = {
 
       return stats;
     } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors du calcul des statistiques: ${error.message}`,
+        );
+      }
       throw new Error(
-        `Erreur lors du calcul des statistiques: ${error.message}`,
+        "Erreur lors du calcul des statistiques: erreur inconnue",
       );
     }
   },
@@ -184,8 +213,13 @@ export const ProjectService = {
 
       return await projectRepository.updateProjectDates(id, startDate, endDate);
     } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors de la mise à jour des dates: ${error.message}`,
+        );
+      }
       throw new Error(
-        `Erreur lors de la mise à jour des dates: ${error.message}`,
+        "Erreur lors de la mise à jour des dates: erreur inconnue",
       );
     }
   },
@@ -205,8 +239,13 @@ export const ProjectService = {
         (project) => project.endDate && project.endDate < now,
       );
     } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors de la récupération des projets en retard: ${error.message}`,
+        );
+      }
       throw new Error(
-        `Erreur lors de la récupération des projets en retard: ${error.message}`,
+        "Erreur lors de la récupération des projets en retard: erreur inconnue",
       );
     }
   },
@@ -221,8 +260,13 @@ export const ProjectService = {
 
       return await projectRepository.findActiveProjects();
     } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors de la récupération des projets actifs: ${error.message}`,
+        );
+      }
       throw new Error(
-        `Erreur lors de la récupération des projets actifs: ${error.message}`,
+        "Erreur lors de la récupération des projets actifs: erreur inconnue",
       );
     }
   },
@@ -246,8 +290,13 @@ export const ProjectService = {
           project.startDate <= now,
       );
     } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors de la récupération des projets terminés: ${error.message}`,
+        );
+      }
       throw new Error(
-        `Erreur lors de la récupération des projets terminés: ${error.message}`,
+        "Erreur lors de la récupération des projets terminés: erreur inconnue",
       );
     }
   },
@@ -276,14 +325,19 @@ export const ProjectService = {
           : undefined,
         workspace: workspaceId,
         createdBy: createdBy,
-        startDate: undefined,
-        endDate: undefined,
+        startDate: originalProject.startDate,
+        endDate: originalProject.endDate,
       };
 
       return await this.createProject(duplicateData);
     } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors de la duplication du projet: ${error.message}`,
+        );
+      }
       throw new Error(
-        `Erreur lors de la duplication du projet: ${error.message}`,
+        "Erreur lors de la duplication du projet: erreur inconnue",
       );
     }
   },
@@ -294,7 +348,12 @@ export const ProjectService = {
         archived: true,
       } as any);
     } catch (error) {
-      throw new Error(`Erreur lors de l'archivage du projet: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors de l'archivage du projet: ${error.message}`,
+        );
+      }
+      throw new Error("Erreur lors de l'archivage du projet: erreur inconnue");
     }
   },
 
@@ -357,8 +416,13 @@ export const ProjectService = {
         endDate,
       );
     } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Erreur lors de la récupération des projets par période: ${error.message}`,
+        );
+      }
       throw new Error(
-        `Erreur lors de la récupération des projets par période: ${error.message}`,
+        "Erreur lors de la récupération des projets par période: erreur inconnue",
       );
     }
   },
@@ -434,14 +498,17 @@ export const ProjectService = {
   ): boolean {
     if (!project.startDate) return false;
 
+    const projectStart = new Date(project.startDate);
+    const projectEnd = project.endDate ? new Date(project.endDate) : undefined;
+
     return (
-      (project.startDate >= startDate && project.startDate <= endDate) ||
-      (project.endDate &&
-        project.endDate >= startDate &&
-        project.endDate <= endDate) ||
-      (project.startDate <= startDate &&
-        project.endDate &&
-        project.endDate >= endDate)
+      (projectStart >= startDate && projectStart <= endDate) || // commence dans la période
+      (projectEnd !== undefined &&
+        projectEnd >= startDate &&
+        projectEnd <= endDate) || // finit dans la période
+      (projectStart <= startDate &&
+        projectEnd !== undefined &&
+        projectEnd >= endDate) // englobe toute la période
     );
   },
 };
