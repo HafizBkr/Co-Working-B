@@ -53,10 +53,9 @@ const changeTaskStatusHandler: RequestHandler = async (req, res) => {
 // Routes
 
 router.post(
-  "/workspaces/:workspaceId/projects/:projectId/tasks",
+  "/projects/:projectId/tasks",
   authenticateJWT,
-  hasWorkspaceAccess,
-  hasAdminAccess,
+  hasProjectAccess,
   createTaskHandler,
 );
 
@@ -88,13 +87,7 @@ router.put("/tasks/:taskId", authenticateJWT, updateTaskHandler);
 
 router.delete("/tasks/:taskId", authenticateJWT, deleteTaskHandler);
 
-router.patch(
-  "/workspaces/:workspaceId/tasks/:taskId/assign",
-  authenticateJWT,
-  hasWorkspaceAccess,
-  hasAdminAccess,
-  assignTaskHandler,
-);
+router.patch("/tasks/:taskId/assign", authenticateJWT, assignTaskHandler);
 
 router.patch("/tasks/:taskId/status", authenticateJWT, changeTaskStatusHandler);
 

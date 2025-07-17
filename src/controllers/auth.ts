@@ -9,6 +9,13 @@ import {
 } from "../utils/passwordReset";
 import { hashPassword } from "../utils/hash";
 import PasswordReset from "../models/passwordReset";
+import {
+  ERROR_MESSAGES,
+  HTTP_RESPONSES,
+  RESPONSE_CODES,
+  SUCCESS_MESSAGES,
+} from "../utils/error_response";
+
 const userRepository = new UserRepository();
 
 export const AuthController = {
@@ -17,12 +24,11 @@ export const AuthController = {
       const { email, password, username, avatar, bio, location } = req.body;
 
       if (!email || !password || !username) {
-        return res.status(400).json({
-          success: false,
-          message: "Email, password and username are required",
+        return res.status(RESPONSE_CODES.BAD_REQUEST).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.INVALID_AUTH_PAYLOAD,
         });
       }
-
       const user = await userRepository.register({
         email,
         password,
@@ -31,19 +37,16 @@ export const AuthController = {
         bio,
         location,
       });
-
-      // Check if user was created successfully
       if (!user) {
-        return res.status(409).json({
-          success: false,
-          message: "User with this email already exists",
+        return res.status(RESPONSE_CODES.CONFLICT).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.EMAIL_ALREADY_USED,
         });
       }
 
-      return res.status(201).json({
-        success: true,
-        message:
-          "User registered successfully. Please check your email for verification code.",
+      return res.status(RESPONSE_CODES.CREATED).json({
+        ...HTTP_RESPONSES.SUCCESS,
+        message: SUCCESS_MESSAGES.USER_CREATED,
         data: {
           id: user._id,
           email: user.email,
@@ -57,9 +60,9 @@ export const AuthController = {
       });
     } catch (error) {
       console.error("Registration error:", error);
-      return res.status(500).json({
-        success: false,
-        message: "An error occurred during registration",
+      return res.status(RESPONSE_CODES.SERVER_ERROR).json({
+        ...HTTP_RESPONSES.FAILURE,
+        message: ERROR_MESSAGES.SERVER_ERROR,
       });
     }
   },
@@ -69,50 +72,50 @@ export const AuthController = {
       const { email, code } = req.body;
 
       if (!email || !code) {
-        return res.status(400).json({
-          success: false,
-          message: "Email and verification code are required",
+        return res.status(RESPONSE_CODES.BAD_REQUEST).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.INVALID_PAYLOAD,
         });
       }
 
       try {
         await verifyOTP(email, code);
 
-        // Met à jour le user (emailVerified: true)
         const user = await userRepository.findOne({ email });
         if (!user) {
-          return res.status(404).json({
-            success: false,
-            message: "User not found",
+          return res.status(RESPONSE_CODES.NOT_FOUND).json({
+            ...HTTP_RESPONSES.FAILURE,
+            message: ERROR_MESSAGES.USER_NOT_FOUND,
           });
         }
         user.emailVerified = true;
         await user.save();
 
-        // Activation de l'invitation SI elle existe
         let invitationActivated = false;
         try {
           await WorkspaceInvitationService.activateInvitationForUser(email);
           invitationActivated = true;
         } catch (e) {}
 
-        return res.status(200).json({
-          success: true,
+        return res.status(RESPONSE_CODES.OK).json({
+          ...HTTP_RESPONSES.SUCCESS,
           message: invitationActivated
-            ? "Email vérifié et invitation acceptée, vous avez rejoint le workspace."
-            : "Email verified successfully",
+            ? SUCCESS_MESSAGES.EMAIL_VERIFIED +
+              " " +
+              SUCCESS_MESSAGES.INVITATION_ACCEPTED
+            : SUCCESS_MESSAGES.EMAIL_VERIFIED,
         });
       } catch (otpError) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid verification code",
+        return res.status(RESPONSE_CODES.BAD_REQUEST).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.INVALID_VERIFICATION_CODE,
         });
       }
     } catch (error) {
       console.error("Email verification error:", error);
-      return res.status(500).json({
-        success: false,
-        message: "An error occurred during email verification",
+      return res.status(RESPONSE_CODES.SERVER_ERROR).json({
+        ...HTTP_RESPONSES.FAILURE,
+        message: ERROR_MESSAGES.SERVER_ERROR,
       });
     }
   },
@@ -122,31 +125,31 @@ export const AuthController = {
       const { email } = req.body;
 
       if (!email) {
-        return res.status(400).json({
-          success: false,
-          message: "Email is required",
+        return res.status(RESPONSE_CODES.BAD_REQUEST).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.EMAIL_REQUIRED,
         });
       }
 
       const user = await userRepository.findOne({ email });
       if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "User not found",
+        return res.status(RESPONSE_CODES.NOT_FOUND).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.USER_NOT_FOUND,
         });
       }
 
       await createAndSendOTP(email);
 
-      return res.status(200).json({
-        success: true,
-        message: "New verification code sent to your email",
+      return res.status(RESPONSE_CODES.OK).json({
+        ...HTTP_RESPONSES.SUCCESS,
+        message: SUCCESS_MESSAGES.OTP_SENT,
       });
     } catch (error) {
       console.error("Resend OTP error:", error);
-      return res.status(500).json({
-        success: false,
-        message: "An error occurred while sending the verification code",
+      return res.status(RESPONSE_CODES.SERVER_ERROR).json({
+        ...HTTP_RESPONSES.FAILURE,
+        message: ERROR_MESSAGES.OTP_SEND_FAILED,
       });
     }
   },
@@ -156,40 +159,37 @@ export const AuthController = {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        return res.status(400).json({
-          success: false,
-          message: "Email and password are required",
+        return res.status(RESPONSE_CODES.BAD_REQUEST).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.INVALID_PAYLOAD,
         });
       }
 
       const user = await userRepository.login(email, password);
 
       if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: "Invalid email or password",
+        return res.status(RESPONSE_CODES.UNAUTHORIZED).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.INVALID_EMAIL_OR_PASSWORD,
         });
       }
 
-      // Vérifier si l'email est vérifié
       if (!user.emailVerified) {
-        // Renvoyer un code OTP
         await createAndSendOTP(user.email);
 
-        return res.status(403).json({
-          success: false,
-          message: "Email not verified. A new verification code has been sent.",
+        return res.status(RESPONSE_CODES.FORBIDDEN).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.EMAIL_NOT_VERIFIED,
           needsVerification: true,
           email: user.email,
         });
       }
 
-      // Générer le token JWT
       const token = generateToken(user);
 
-      return res.status(200).json({
-        success: true,
-        message: "Logged in successfully",
+      return res.status(RESPONSE_CODES.OK).json({
+        ...HTTP_RESPONSES.SUCCESS,
+        message: SUCCESS_MESSAGES.USER_LOGGED_IN,
         data: {
           user: {
             id: user._id,
@@ -204,9 +204,9 @@ export const AuthController = {
       });
     } catch (error) {
       console.error("Login error:", error);
-      return res.status(500).json({
-        success: false,
-        message: "An error occurred during login",
+      return res.status(RESPONSE_CODES.SERVER_ERROR).json({
+        ...HTTP_RESPONSES.FAILURE,
+        message: ERROR_MESSAGES.SERVER_ERROR,
       });
     }
   },
@@ -216,33 +216,31 @@ export const AuthController = {
       const { email } = req.body;
 
       if (!email) {
-        return res.status(400).json({
-          success: false,
-          message: "Email is required",
+        return res.status(RESPONSE_CODES.BAD_REQUEST).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.EMAIL_REQUIRED,
         });
       }
 
       const user = await userRepository.findOne({ email });
       if (!user) {
-        // Par sécurité, ne pas indiquer que l'utilisateur n'existe pas
-        return res.status(200).json({
-          success: true,
-          message:
-            "If this email is registered, a password reset code has been sent",
+        return res.status(RESPONSE_CODES.OK).json({
+          ...HTTP_RESPONSES.SUCCESS,
+          message: SUCCESS_MESSAGES.PASSWORD_RESET_CODE_SENT,
         });
       }
 
       await createAndSendPasswordResetCode(email);
 
-      return res.status(200).json({
-        success: true,
-        message: "Password reset code sent to your email",
+      return res.status(RESPONSE_CODES.OK).json({
+        ...HTTP_RESPONSES.SUCCESS,
+        message: SUCCESS_MESSAGES.PASSWORD_RESET_CODE_SENT,
       });
     } catch (error) {
       console.error("Forgot password error:", error);
-      return res.status(500).json({
-        success: false,
-        message: "An error occurred while processing your request",
+      return res.status(RESPONSE_CODES.SERVER_ERROR).json({
+        ...HTTP_RESPONSES.FAILURE,
+        message: ERROR_MESSAGES.PASSWORD_RESET_FAILED,
       });
     }
   },
@@ -252,29 +250,29 @@ export const AuthController = {
       const { email, code } = req.body;
 
       if (!email || !code) {
-        return res.status(400).json({
-          success: false,
-          message: "Email and reset code are required",
+        return res.status(RESPONSE_CODES.BAD_REQUEST).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.INVALID_PAYLOAD,
         });
       }
 
       try {
         await verifyPasswordResetCode(email, code);
-        return res.status(200).json({
-          success: true,
-          message: "Reset code verified successfully",
+        return res.status(RESPONSE_CODES.OK).json({
+          ...HTTP_RESPONSES.SUCCESS,
+          message: SUCCESS_MESSAGES.RESET_CODE_VERIFIED,
         });
       } catch (error) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid reset code",
+        return res.status(RESPONSE_CODES.BAD_REQUEST).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.INVALID_RESET_CODE,
         });
       }
     } catch (error) {
       console.error("Verify reset code error:", error);
-      return res.status(500).json({
-        success: false,
-        message: "An error occurred while verifying the reset code",
+      return res.status(RESPONSE_CODES.SERVER_ERROR).json({
+        ...HTTP_RESPONSES.FAILURE,
+        message: ERROR_MESSAGES.SERVER_ERROR,
       });
     }
   },
@@ -284,18 +282,18 @@ export const AuthController = {
       const { email, code, newPassword } = req.body;
 
       if (!email || !code || !newPassword) {
-        return res.status(400).json({
-          success: false,
-          message: "Email, reset code and new password are required",
+        return res.status(RESPONSE_CODES.BAD_REQUEST).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.INVALID_PAYLOAD,
         });
       }
 
       try {
         await verifyPasswordResetCode(email, code);
       } catch (error) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid reset code",
+        return res.status(RESPONSE_CODES.BAD_REQUEST).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.INVALID_RESET_CODE,
         });
       }
 
@@ -306,23 +304,23 @@ export const AuthController = {
       );
 
       if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "User not found",
+        return res.status(RESPONSE_CODES.NOT_FOUND).json({
+          ...HTTP_RESPONSES.FAILURE,
+          message: ERROR_MESSAGES.USER_NOT_FOUND,
         });
       }
 
       await PasswordReset.deleteMany({ email });
 
-      return res.status(200).json({
-        success: true,
-        message: "Password reset successfully",
+      return res.status(RESPONSE_CODES.OK).json({
+        ...HTTP_RESPONSES.SUCCESS,
+        message: SUCCESS_MESSAGES.PASSWORD_RESET_SUCCESS,
       });
     } catch (error) {
       console.error("Reset password error:", error);
-      return res.status(500).json({
-        success: false,
-        message: "An error occurred while resetting your password",
+      return res.status(RESPONSE_CODES.SERVER_ERROR).json({
+        ...HTTP_RESPONSES.FAILURE,
+        message: ERROR_MESSAGES.SERVER_ERROR,
       });
     }
   },

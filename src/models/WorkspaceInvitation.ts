@@ -44,7 +44,7 @@ const workspaceInvitationSchema = new Schema<IWorkspaceInvitation>(
     token: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // <-- SUPPRIME cette ligne !
     },
     expiresAt: {
       type: Date,
@@ -71,7 +71,7 @@ workspaceInvitationSchema.index(
   { unique: true, sparse: true },
 );
 
-// Index for token lookups
+// Index for token lookups (unique)
 workspaceInvitationSchema.index({ token: 1 }, { unique: true });
 
 // Index for expiry cleanup

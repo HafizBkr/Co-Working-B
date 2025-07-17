@@ -4,11 +4,9 @@ import { TaskService } from "../services/task.service";
 export class TaskController {
   static async createTask(req: Request, res: Response) {
     try {
-      const workspaceId = req.params.workspaceId;
       const projectId = req.params.projectId;
       const taskData = {
         ...req.body,
-        workspace: workspaceId,
         project: projectId,
         createdBy: req.user?.userId,
       };

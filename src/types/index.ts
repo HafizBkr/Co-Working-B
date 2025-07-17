@@ -1,6 +1,7 @@
-import mongoose from 'mongoose';
-import { WorkspaceRole } from '../models/Workspace';
-import { IUser } from '../models/user';
+import mongoose from "mongoose";
+import { WorkspaceRole, IWorkspace } from "../models/Workspace";
+import { IWorkspaceMember } from "../models/WorkspaceMember";
+import { IUser } from "../models/user";
 
 export interface Position {
   x: number;
@@ -31,7 +32,12 @@ export interface WorkspaceInvitationData {
   invitedBy: mongoose.Types.ObjectId;
   token: string;
   expiresAt: Date;
-  status: 'pending' | 'accepted' | 'rejected' | 'expired' | 'waiting_verification';
+  status:
+    | "pending"
+    | "accepted"
+    | "rejected"
+    | "expired"
+    | "waiting_verification";
 }
 
 export interface WorkspaceMemberData {
@@ -45,9 +51,10 @@ export interface WorkspaceMemberData {
   lastActive?: Date;
 }
 
-export interface PopulatedWorkspaceMember extends Omit<WorkspaceMemberData, 'user'> {
+export interface PopulatedWorkspaceMember
+  extends Omit<WorkspaceMemberData, "user"> {
   _id: mongoose.Types.ObjectId;
-  user: Pick<IUser, '_id' | 'email' | 'username' | 'avatar'>;
+  user: Pick<IUser, "_id" | "email" | "username" | "avatar">;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,6 +66,14 @@ export interface UserRegistrationData {
   avatar?: string;
   bio?: string;
   location?: string;
+}
+
+declare module "express-serve-static-core" {
+  interface Request {
+    workspace?: IWorkspace;
+    workspaceMember?: IWorkspaceMember;
+    workspaceRole?: WorkspaceRole;
+  }
 }
 
 export type MongooseId = string | mongoose.Types.ObjectId;
