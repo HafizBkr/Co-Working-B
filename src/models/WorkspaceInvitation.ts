@@ -65,11 +65,8 @@ const workspaceInvitationSchema = new Schema<IWorkspaceInvitation>(
   { timestamps: true },
 );
 
-// Index to ensure unique email per workspace
-workspaceInvitationSchema.index(
-  { workspace: 1, email: 1 },
-  { unique: true, sparse: true },
-);
+// Index pour accélérer la recherche (plus unique)
+workspaceInvitationSchema.index({ workspace: 1, email: 1 });
 
 // Index for token lookups
 workspaceInvitationSchema.index({ token: 1 }, { unique: true });
