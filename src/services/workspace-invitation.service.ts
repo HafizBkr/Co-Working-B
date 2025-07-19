@@ -73,15 +73,23 @@ export const WorkspaceInvitationService = {
 
     // Crée un membre si l'utilisateur existe
     if (existingUser) {
-      await WorkspaceMemberRepository.createMembership({
-        workspace: new mongoose.Types.ObjectId(workspaceId),
-        user: existingUser._id as mongoose.Types.ObjectId,
-        email,
-        role: role || WorkspaceRole.MEMBER,
-        invitedBy: new mongoose.Types.ObjectId(inviterId),
-        inviteAccepted: false,
-      });
-
+      // Vérifier si le membre existe déjà
+      const existingMembership =
+        await WorkspaceMemberRepository.findMembershipByEmail(
+          workspaceId,
+          email,
+        );
+      if (!existingMembership) {
+        await WorkspaceMemberRepository.createMembership({
+          workspace: new mongoose.Types.ObjectId(workspaceId),
+          user: existingUser._id as mongoose.Types.ObjectId,
+          email,
+          role: role || WorkspaceRole.MEMBER,
+          invitedBy: new mongoose.Types.ObjectId(inviterId),
+          inviteAccepted: false,
+        });
+      }
+      // Sinon, ne rien faire (évite le duplicate key error)
       await Chat.findOneAndUpdate(
         {
           workspace: new mongoose.Types.ObjectId(workspaceId),
@@ -200,15 +208,25 @@ export const WorkspaceInvitationService = {
     const user = (await userRepository.findOne({ email })) as IUser | null;
     if (!user) throw new Error("Utilisateur introuvable");
 
-    const membership = await WorkspaceMemberRepository.findMembershipByEmail(
+    let membership = await WorkspaceMemberRepository.findMembershipByEmail(
       invitation.workspace.toString(),
       email,
     );
-    if (!membership) throw new Error("Membership introuvable");
-
-    membership.inviteAccepted = true;
-    membership.user = user._id as Types.ObjectId;
-    await membership.save();
+    // S'il n'existe pas, on le crée ici !
+    if (!membership) {
+      membership = await WorkspaceMemberRepository.createMembership({
+        workspace: invitation.workspace,
+        user: user._id as Types.ObjectId,
+        email,
+        role: invitation.role,
+        invitedBy: invitation.invitedBy,
+        inviteAccepted: true,
+      });
+    } else {
+      membership.inviteAccepted = true;
+      membership.user = user._id as Types.ObjectId;
+      await membership.save();
+    }
 
     await Chat.findOneAndUpdate(
       {
