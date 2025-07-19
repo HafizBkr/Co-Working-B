@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
 import { TaskService } from "../services/task.service";
+import {
+  RESPONSE_CODES,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+} from "../utils/error_response";
 
 export class TaskController {
   static async createTask(req: Request, res: Response) {
@@ -11,9 +16,16 @@ export class TaskController {
         createdBy: req.user?.userId,
       };
       const task = await TaskService.createTask(taskData);
-      res.status(201).json({ success: true, data: task });
+      res.status(RESPONSE_CODES.CREATED).json({
+        success: true,
+        message: SUCCESS_MESSAGES.TASK_CREATED,
+        data: task,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.TASK_CREATION_FAILED,
+      });
     }
   }
 
@@ -22,20 +34,34 @@ export class TaskController {
       const task = await TaskService.getTaskById(req.params.taskId);
       if (!task)
         return res
-          .status(404)
-          .json({ success: false, message: "Task not found" });
-      res.json({ success: true, data: task });
+          .status(RESPONSE_CODES.NOT_FOUND)
+          .json({ success: false, message: ERROR_MESSAGES.TASK_NOT_FOUND });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.TASK_FOUND,
+        data: task,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.TASK_NOT_FOUND,
+      });
     }
   }
 
   static async getTasksByProject(req: Request, res: Response) {
     try {
       const tasks = await TaskService.getTasksByProject(req.params.projectId);
-      res.json({ success: true, data: tasks });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.TASKS_FOUND,
+        data: tasks,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.TASK_NOT_FOUND,
+      });
     }
   }
 
@@ -44,27 +70,48 @@ export class TaskController {
       const tasks = await TaskService.getTasksByWorkspace(
         req.params.workspaceId,
       );
-      res.json({ success: true, data: tasks });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.TASKS_FOUND,
+        data: tasks,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.TASK_NOT_FOUND,
+      });
     }
   }
 
   static async getTasksByAssignedTo(req: Request, res: Response) {
     try {
       const tasks = await TaskService.getTasksByAssignedTo(req.params.userId);
-      res.json({ success: true, data: tasks });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.TASKS_FOUND,
+        data: tasks,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.TASK_NOT_FOUND,
+      });
     }
   }
 
   static async getTasksByStatus(req: Request, res: Response) {
     try {
       const tasks = await TaskService.getTasksByStatus(req.params.status);
-      res.json({ success: true, data: tasks });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.TASKS_FOUND,
+        data: tasks,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.TASK_NOT_FOUND,
+      });
     }
   }
 
@@ -73,11 +120,18 @@ export class TaskController {
       const task = await TaskService.updateTask(req.params.taskId, req.body);
       if (!task)
         return res
-          .status(404)
-          .json({ success: false, message: "Task not found" });
-      res.json({ success: true, data: task });
+          .status(RESPONSE_CODES.NOT_FOUND)
+          .json({ success: false, message: ERROR_MESSAGES.TASK_NOT_FOUND });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.TASK_UPDATED,
+        data: task,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.TASK_UPDATE_FAILED,
+      });
     }
   }
 
@@ -86,11 +140,17 @@ export class TaskController {
       const task = await TaskService.deleteTask(req.params.taskId);
       if (!task)
         return res
-          .status(404)
-          .json({ success: false, message: "Task not found" });
-      res.status(204).send();
+          .status(RESPONSE_CODES.NOT_FOUND)
+          .json({ success: false, message: ERROR_MESSAGES.TASK_NOT_FOUND });
+      res.status(RESPONSE_CODES.NO_CONTENT).json({
+        success: true,
+        message: SUCCESS_MESSAGES.TASK_DELETED,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.TASK_DELETE_FAILED,
+      });
     }
   }
 
@@ -102,13 +162,13 @@ export class TaskController {
 
       if (!task)
         return res
-          .status(404)
-          .json({ success: false, message: "Task not found" });
+          .status(RESPONSE_CODES.NOT_FOUND)
+          .json({ success: false, message: ERROR_MESSAGES.TASK_NOT_FOUND });
 
       if (workspaceId && task.workspace.toString() !== workspaceId) {
-        return res.status(400).json({
+        return res.status(RESPONSE_CODES.BAD_REQUEST).json({
           success: false,
-          message: "Workspace ID does not match task's workspace",
+          message: ERROR_MESSAGES.TASK_WORKSPACE_MISMATCH,
         });
       }
 
@@ -116,9 +176,16 @@ export class TaskController {
         req.params.taskId,
         userId,
       );
-      res.json({ success: true, data: updatedTask });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.TASK_ASSIGNED,
+        data: updatedTask,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.TASK_ASSIGN_FAILED,
+      });
     }
   }
 
@@ -131,11 +198,18 @@ export class TaskController {
       );
       if (!task)
         return res
-          .status(404)
-          .json({ success: false, message: "Task not found" });
-      res.json({ success: true, data: task });
+          .status(RESPONSE_CODES.NOT_FOUND)
+          .json({ success: false, message: ERROR_MESSAGES.TASK_NOT_FOUND });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.TASK_STATUS_CHANGED,
+        data: task,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.TASK_STATUS_CHANGE_FAILED,
+      });
     }
   }
 }

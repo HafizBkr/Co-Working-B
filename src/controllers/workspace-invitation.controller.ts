@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
 import { WorkspaceInvitationService } from "../services/workspace-invitation.service";
+import {
+  RESPONSE_CODES,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+} from "../utils/error_response";
 
 export class WorkspaceInvitationController {
   static async inviteToWorkspace(req: Request, res: Response): Promise<void> {
@@ -11,23 +16,23 @@ export class WorkspaceInvitationController {
 
       if (!inviterId) {
         res
-          .status(401)
-          .json({ success: false, message: "Utilisateur non authentifié" });
+          .status(RESPONSE_CODES.UNAUTHORIZED)
+          .json({ success: false, message: ERROR_MESSAGES.UNAUTHORIZED });
         return;
       }
 
       if (!workspaceName) {
-        res.status(400).json({
+        res.status(RESPONSE_CODES.BAD_REQUEST).json({
           success: false,
-          message: "Nom de l'espace de travail manquant",
+          message: ERROR_MESSAGES.WORKSPACE_NOT_FOUND,
         });
         return;
       }
 
       if (!Array.isArray(emails)) {
         res
-          .status(400)
-          .json({ success: false, message: "emails must be an array" });
+          .status(RESPONSE_CODES.BAD_REQUEST)
+          .json({ success: false, message: ERROR_MESSAGES.INVALID_PAYLOAD });
         return;
       }
 
@@ -48,9 +53,16 @@ export class WorkspaceInvitationController {
         }),
       );
 
-      res.status(201).json({ success: true, results });
+      res.status(RESPONSE_CODES.CREATED).json({
+        success: true,
+        message: SUCCESS_MESSAGES.INVITATION_SENT,
+        results,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.INVITATION_NOT_FOUND,
+      });
     }
   }
 
@@ -64,16 +76,22 @@ export class WorkspaceInvitationController {
 
       if (!userId) {
         res
-          .status(401)
-          .json({ success: false, message: "Utilisateur non authentifié" });
+          .status(RESPONSE_CODES.UNAUTHORIZED)
+          .json({ success: false, message: ERROR_MESSAGES.UNAUTHORIZED });
         return;
       }
 
       await WorkspaceInvitationService.accept(token, userId);
 
-      res.json({ success: true, message: "Invitation acceptée" });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.INVITATION_ACCEPTED,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.INVITATION_NOT_FOUND,
+      });
     }
   }
 
@@ -89,9 +107,16 @@ export class WorkspaceInvitationController {
         userData,
       );
 
-      res.status(201).json({ success: true, user });
+      res.status(RESPONSE_CODES.CREATED).json({
+        success: true,
+        message: SUCCESS_MESSAGES.INVITATION_ACCEPTED,
+        user,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.INVITATION_NOT_FOUND,
+      });
     }
   }
 }

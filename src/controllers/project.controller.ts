@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
 import { ProjectService } from "../services/project.service";
+import {
+  RESPONSE_CODES,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+} from "../utils/error_response";
 
 export class ProjectController {
   static async createProject(req: Request, res: Response): Promise<void> {
@@ -10,8 +15,8 @@ export class ProjectController {
 
       if (!createdBy) {
         res
-          .status(401)
-          .json({ success: false, message: "Utilisateur non authentifié" });
+          .status(RESPONSE_CODES.UNAUTHORIZED)
+          .json({ success: false, message: ERROR_MESSAGES.UNAUTHORIZED });
         return;
       }
 
@@ -25,9 +30,16 @@ export class ProjectController {
       };
 
       const result = await ProjectService.createProject(projectData);
-      res.status(201).json({ success: true, data: result });
+      res.status(RESPONSE_CODES.CREATED).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECT_CREATED,
+        data: result,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECT_CREATION_FAILED,
+      });
     }
   }
 
@@ -48,9 +60,16 @@ export class ProjectController {
       };
 
       const result = await ProjectService.getProjects(filters);
-      res.json({ success: true, data: result });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECTS_FOUND,
+        data: result,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECTS_FETCH_FAILED,
+      });
     }
   }
 
@@ -60,13 +79,23 @@ export class ProjectController {
 
       const result = await ProjectService.getProjectById(projectId);
       if (!result) {
-        res.status(404).json({ success: false, message: "Projet non trouvé" });
+        res.status(RESPONSE_CODES.NOT_FOUND).json({
+          success: false,
+          message: ERROR_MESSAGES.PROJECT_NOT_FOUND,
+        });
         return;
       }
 
-      res.json({ success: true, data: result });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECT_FOUND,
+        data: result,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECTS_FETCH_FAILED,
+      });
     }
   }
 
@@ -84,13 +113,23 @@ export class ProjectController {
 
       const result = await ProjectService.updateProject(projectId, updateData);
       if (!result) {
-        res.status(404).json({ success: false, message: "Projet non trouvé" });
+        res.status(RESPONSE_CODES.NOT_FOUND).json({
+          success: false,
+          message: ERROR_MESSAGES.PROJECT_NOT_FOUND,
+        });
         return;
       }
 
-      res.json({ success: true, data: result });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECT_UPDATED,
+        data: result,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECT_UPDATE_FAILED,
+      });
     }
   }
 
@@ -100,13 +139,22 @@ export class ProjectController {
 
       const result = await ProjectService.deleteProject(projectId);
       if (!result) {
-        res.status(404).json({ success: false, message: "Projet non trouvé" });
+        res.status(RESPONSE_CODES.NOT_FOUND).json({
+          success: false,
+          message: ERROR_MESSAGES.PROJECT_NOT_FOUND,
+        });
         return;
       }
 
-      res.json({ success: true, message: "Projet supprimé avec succès" });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECT_DELETED,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECT_DELETE_FAILED,
+      });
     }
   }
 
@@ -116,9 +164,16 @@ export class ProjectController {
       const userId = req.user?.userId;
 
       const result = await ProjectService.getProjectStats(workspaceId, userId);
-      res.json({ success: true, data: result });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECT_STATS_FOUND,
+        data: result,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECT_STATS_FAILED,
+      });
     }
   }
 
@@ -127,9 +182,16 @@ export class ProjectController {
       const { workspaceId } = req.params;
 
       const result = await ProjectService.getActiveProjects(workspaceId);
-      res.json({ success: true, data: result });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECTS_ACTIVE_FOUND,
+        data: result,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECTS_ACTIVE_FETCH_FAILED,
+      });
     }
   }
 
@@ -138,9 +200,16 @@ export class ProjectController {
       const { workspaceId } = req.params;
 
       const result = await ProjectService.getOverdueProjects(workspaceId);
-      res.json({ success: true, data: result });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECTS_OVERDUE_FOUND,
+        data: result,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECTS_OVERDUE_FETCH_FAILED,
+      });
     }
   }
 
@@ -152,9 +221,16 @@ export class ProjectController {
       const { workspaceId } = req.params;
 
       const result = await ProjectService.getCompletedProjects(workspaceId);
-      res.json({ success: true, data: result });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECTS_COMPLETED_FOUND,
+        data: result,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECTS_COMPLETED_FETCH_FAILED,
+      });
     }
   }
 
@@ -165,17 +241,17 @@ export class ProjectController {
       const createdBy = req.user?.userId;
 
       if (!createdBy) {
-        res.status(401).json({
+        res.status(RESPONSE_CODES.UNAUTHORIZED).json({
           success: false,
-          message: "Utilisateur non authentifié",
+          message: ERROR_MESSAGES.UNAUTHORIZED,
         });
         return;
       }
 
       if (!newName) {
-        res.status(400).json({
+        res.status(RESPONSE_CODES.BAD_REQUEST).json({
           success: false,
-          message: "Le nouveau nom est requis pour la duplication",
+          message: ERROR_MESSAGES.PROJECT_DUPLICATE_NAME_REQUIRED,
         });
         return;
       }
@@ -185,9 +261,16 @@ export class ProjectController {
         newName,
         createdBy,
       );
-      res.status(201).json({ success: true, data: result });
+      res.status(RESPONSE_CODES.CREATED).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECT_DUPLICATED,
+        data: result,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECT_DUPLICATE_FAILED,
+      });
     }
   }
 
@@ -197,13 +280,22 @@ export class ProjectController {
 
       const result = await ProjectService.archiveProject(projectId);
       if (!result) {
-        res.status(404).json({ success: false, message: "Projet non trouvé" });
+        res.status(RESPONSE_CODES.NOT_FOUND).json({
+          success: false,
+          message: ERROR_MESSAGES.PROJECT_NOT_FOUND,
+        });
         return;
       }
 
-      res.json({ success: true, message: "Projet archivé avec succès" });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECT_ARCHIVED,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECT_ARCHIVE_FAILED,
+      });
     }
   }
 
@@ -219,13 +311,23 @@ export class ProjectController {
       );
 
       if (!result) {
-        res.status(404).json({ success: false, message: "Projet non trouvé" });
+        res.status(RESPONSE_CODES.NOT_FOUND).json({
+          success: false,
+          message: ERROR_MESSAGES.PROJECT_NOT_FOUND,
+        });
         return;
       }
 
-      res.json({ success: true, data: result });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECT_DATES_UPDATED,
+        data: result,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECT_UPDATE_DATES_FAILED,
+      });
     }
   }
 
@@ -235,9 +337,9 @@ export class ProjectController {
       const { startDate, endDate } = req.query;
 
       if (!startDate || !endDate) {
-        res.status(400).json({
+        res.status(RESPONSE_CODES.BAD_REQUEST).json({
           success: false,
-          message: "Les dates de début et de fin sont requises",
+          message: ERROR_MESSAGES.PROJECT_DATES_REQUIRED,
         });
         return;
       }
@@ -248,9 +350,16 @@ export class ProjectController {
         workspaceId,
       );
 
-      res.json({ success: true, data: result });
+      res.status(RESPONSE_CODES.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.PROJECTS_PERIOD_FOUND,
+        data: result,
+      });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECTS_FETCH_FAILED,
+      });
     }
   }
 
@@ -260,7 +369,10 @@ export class ProjectController {
 
       const project = await ProjectService.getProjectById(projectId);
       if (!project) {
-        res.status(404).json({ success: false, message: "Projet non trouvé" });
+        res.status(RESPONSE_CODES.NOT_FOUND).json({
+          success: false,
+          message: ERROR_MESSAGES.PROJECT_NOT_FOUND,
+        });
         return;
       }
 
@@ -269,8 +381,9 @@ export class ProjectController {
       const isActive = ProjectService.isProjectActive(project);
       const isOverdue = ProjectService.isProjectOverdue(project);
 
-      res.json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
+        message: SUCCESS_MESSAGES.PROJECT_STATUS_FOUND,
         data: {
           status,
           duration,
@@ -279,7 +392,10 @@ export class ProjectController {
         },
       });
     } catch (e: any) {
-      res.status(400).json({ success: false, message: e.message });
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
+        success: false,
+        message: e.message || ERROR_MESSAGES.PROJECT_STATUS_FAILED,
+      });
     }
   }
 }

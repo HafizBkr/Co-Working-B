@@ -1,5 +1,11 @@
 import { Request, Response } from "express";
 import ChatService from "../services/chat.service";
+import { getErrorMessage } from "../utils/error-handler";
+import {
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+  RESPONSE_CODES,
+} from "../utils/error_response";
 
 export class ChatController {
   static async createChat(req: Request, res: Response): Promise<void> {
@@ -8,9 +14,9 @@ export class ChatController {
       const userId = req.user?.userId;
 
       if (!userId) {
-        res.status(400).json({
+        res.status(RESPONSE_CODES.BAD_REQUEST).json({
           success: false,
-          message: "User ID is required",
+          message: ERROR_MESSAGES.CHAT_USER_ID_REQUIRED,
         });
         return;
       }
@@ -23,15 +29,16 @@ export class ChatController {
         isDirectMessage,
       );
 
-      res.status(201).json({
+      res.status(RESPONSE_CODES.CREATED).json({
         success: true,
+        message: SUCCESS_MESSAGES.CHAT_CREATED,
         data: chat,
       });
     } catch (error: any) {
       console.error("Create chat error:", error);
-      res.status(500).json({
+      res.status(RESPONSE_CODES.SERVER_ERROR).json({
         success: false,
-        message: error.message || "Failed to create chat",
+        message: getErrorMessage(error) || ERROR_MESSAGES.CHAT_FAILED_CREATE,
       });
     }
   }
@@ -42,24 +49,24 @@ export class ChatController {
       const userId = req.user?.userId;
 
       if (!userId) {
-        res.status(400).json({
+        res.status(RESPONSE_CODES.BAD_REQUEST).json({
           success: false,
-          message: "User ID is required",
+          message: ERROR_MESSAGES.CHAT_USER_ID_REQUIRED,
         });
         return;
       }
 
       const chats = await ChatService.getUserChats(workspaceId, userId);
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
         data: chats,
       });
     } catch (error: any) {
       console.error("Get user chats error:", error);
-      res.status(500).json({
+      res.status(RESPONSE_CODES.SERVER_ERROR).json({
         success: false,
-        message: error.message || "Failed to get chats",
+        message: getErrorMessage(error) || ERROR_MESSAGES.CHAT_FAILED_GET_LIST,
       });
     }
   }
@@ -71,22 +78,22 @@ export class ChatController {
       const chat = await ChatService.getChatById(chatId);
 
       if (!chat) {
-        res.status(404).json({
+        res.status(RESPONSE_CODES.NOT_FOUND).json({
           success: false,
-          message: "Chat not found",
+          message: ERROR_MESSAGES.CHAT_NOT_FOUND,
         });
         return;
       }
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
         data: chat,
       });
     } catch (error: any) {
       console.error("Get chat error:", error);
-      res.status(500).json({
+      res.status(RESPONSE_CODES.SERVER_ERROR).json({
         success: false,
-        message: error.message || "Failed to get chat",
+        message: getErrorMessage(error) || ERROR_MESSAGES.CHAT_FAILED_GET,
       });
     }
   }
@@ -103,9 +110,12 @@ export class ChatController {
         await ChatService.markMessagesAsRead(chatId, userId);
       }
 
-      res.status(200).json({ success: true, data: messages });
+      res.status(RESPONSE_CODES.OK).json({ success: true, data: messages });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+      res.status(RESPONSE_CODES.SERVER_ERROR).json({
+        success: false,
+        message: getErrorMessage(error) || ERROR_MESSAGES.CHAT_FAILED_GET,
+      });
     }
   }
 
@@ -117,9 +127,9 @@ export class ChatController {
       const { workspaceId, userId } = req.body;
       const currentUserId = req.user?.userId;
       if (!currentUserId || !userId || !workspaceId) {
-        res.status(400).json({
+        res.status(RESPONSE_CODES.BAD_REQUEST).json({
           success: false,
-          message: "workspaceId and userId are required",
+          message: ERROR_MESSAGES.CHAT_DIRECT_CREATION_PAYLOAD,
         });
         return;
       }
@@ -128,9 +138,12 @@ export class ChatController {
         currentUserId,
         userId,
       );
-      res.status(200).json({ success: true, data: chat });
+      res.status(RESPONSE_CODES.OK).json({ success: true, data: chat });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+      res.status(RESPONSE_CODES.SERVER_ERROR).json({
+        success: false,
+        message: getErrorMessage(error) || ERROR_MESSAGES.CHAT_FAILED_CREATE,
+      });
     }
   }
 
@@ -140,9 +153,9 @@ export class ChatController {
       const userId = req.user?.userId;
 
       if (!userId) {
-        res.status(400).json({
+        res.status(RESPONSE_CODES.BAD_REQUEST).json({
           success: false,
-          message: "User ID is required",
+          message: ERROR_MESSAGES.CHAT_USER_ID_REQUIRED,
         });
         return;
       }
@@ -152,16 +165,16 @@ export class ChatController {
         userId,
       );
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
-        message: `${modifiedCount} messages marked as read`,
+        message: SUCCESS_MESSAGES.CHAT_MESSAGES_MARKED_READ,
         data: { modifiedCount },
       });
     } catch (error: any) {
       console.error("Mark messages as read error:", error);
-      res.status(500).json({
+      res.status(RESPONSE_CODES.SERVER_ERROR).json({
         success: false,
-        message: error.message || "Failed to mark messages as read",
+        message: getErrorMessage(error) || ERROR_MESSAGES.CHAT_FAILED_MARK_READ,
       });
     }
   }
@@ -173,9 +186,9 @@ export class ChatController {
       const senderId = req.user?.userId;
 
       if (!senderId) {
-        res.status(400).json({
+        res.status(RESPONSE_CODES.BAD_REQUEST).json({
           success: false,
-          message: "Sender ID is required",
+          message: ERROR_MESSAGES.CHAT_USER_ID_REQUIRED,
         });
         return;
       }
@@ -187,15 +200,17 @@ export class ChatController {
         attachments,
       );
 
-      res.status(201).json({
+      res.status(RESPONSE_CODES.CREATED).json({
         success: true,
+        message: SUCCESS_MESSAGES.CHAT_MESSAGE_SENT,
         data: message,
       });
     } catch (error: any) {
       console.error("Send message error:", error);
-      res.status(500).json({
+      res.status(RESPONSE_CODES.SERVER_ERROR).json({
         success: false,
-        message: error.message || "Failed to send message",
+        message:
+          getErrorMessage(error) || ERROR_MESSAGES.CHAT_FAILED_SEND_MESSAGE,
       });
     }
   }
@@ -208,35 +223,36 @@ export class ChatController {
       const userId = req.user?.userId;
 
       if (!userId) {
-        res.status(401).json({
+        res.status(RESPONSE_CODES.UNAUTHORIZED).json({
           success: false,
-          message: "User ID is required",
+          message: ERROR_MESSAGES.CHAT_USER_ID_REQUIRED,
         });
         return;
       }
 
       const message = await ChatService.getMessageById(messageId, userId);
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
         data: message,
       });
     } catch (error: any) {
       console.error("Get message error:", error);
-      if (error.message === "Message not found") {
-        res.status(404).json({
+      const errMsg = getErrorMessage(error);
+      if (errMsg === "Message not found") {
+        res.status(RESPONSE_CODES.NOT_FOUND).json({
           success: false,
-          message: error.message,
+          message: ERROR_MESSAGES.CHAT_MESSAGE_NOT_FOUND,
         });
-      } else if (error.message === "You don't have access to this message") {
-        res.status(403).json({
+      } else if (errMsg === "You don't have access to this message") {
+        res.status(RESPONSE_CODES.FORBIDDEN).json({
           success: false,
-          message: error.message,
+          message: ERROR_MESSAGES.CHAT_MESSAGE_FORBIDDEN,
         });
       } else {
-        res.status(500).json({
+        res.status(RESPONSE_CODES.SERVER_ERROR).json({
           success: false,
-          message: "Failed to get message",
+          message: ERROR_MESSAGES.CHAT_FAILED_GET,
         });
       }
     }
@@ -249,17 +265,17 @@ export class ChatController {
       const userId = req.user?.userId;
 
       if (!userId) {
-        res.status(401).json({
+        res.status(RESPONSE_CODES.UNAUTHORIZED).json({
           success: false,
-          message: "User ID is required",
+          message: ERROR_MESSAGES.CHAT_USER_ID_REQUIRED,
         });
         return;
       }
 
       if (!content || content.trim() === "") {
-        res.status(400).json({
+        res.status(RESPONSE_CODES.BAD_REQUEST).json({
           success: false,
-          message: "Message content is required",
+          message: ERROR_MESSAGES.CHAT_MESSAGE_CONTENT_REQUIRED,
         });
         return;
       }
@@ -270,32 +286,33 @@ export class ChatController {
         content.trim(),
       );
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
-        message: "Message updated successfully",
+        message: SUCCESS_MESSAGES.CHAT_MESSAGE_UPDATED,
         data: updatedMessage,
       });
     } catch (error: any) {
       console.error("Update message error:", error);
-      if (error.message === "Message not found") {
-        res.status(404).json({
+      const errMsg = getErrorMessage(error);
+      if (errMsg === "Message not found") {
+        res.status(RESPONSE_CODES.NOT_FOUND).json({
           success: false,
-          message: error.message,
+          message: ERROR_MESSAGES.CHAT_MESSAGE_NOT_FOUND,
         });
-      } else if (error.message === "You can only edit your own messages") {
-        res.status(403).json({
+      } else if (errMsg === "You can only edit your own messages") {
+        res.status(RESPONSE_CODES.FORBIDDEN).json({
           success: false,
-          message: error.message,
+          message: ERROR_MESSAGES.CHAT_MESSAGE_EDIT_FORBIDDEN,
         });
-      } else if (error.message.includes("too old")) {
-        res.status(400).json({
+      } else if (errMsg && errMsg.includes("too old")) {
+        res.status(RESPONSE_CODES.BAD_REQUEST).json({
           success: false,
-          message: error.message,
+          message: ERROR_MESSAGES.CHAT_MESSAGE_TOO_OLD,
         });
       } else {
-        res.status(500).json({
+        res.status(RESPONSE_CODES.SERVER_ERROR).json({
           success: false,
-          message: "Failed to update message",
+          message: ERROR_MESSAGES.CHAT_FAILED_UPDATE_MESSAGE,
         });
       }
     }
@@ -308,9 +325,9 @@ export class ChatController {
       const userId = req.user?.userId;
 
       if (!userId) {
-        res.status(401).json({
+        res.status(RESPONSE_CODES.UNAUTHORIZED).json({
           success: false,
-          message: "User ID is required",
+          message: ERROR_MESSAGES.CHAT_USER_ID_REQUIRED,
         });
         return;
       }
@@ -322,35 +339,36 @@ export class ChatController {
         result = await ChatService.deleteMessage(messageId, userId);
       }
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
         message:
           soft === "true"
-            ? "Message soft deleted successfully"
-            : "Message deleted successfully",
+            ? SUCCESS_MESSAGES.CHAT_MESSAGE_SOFT_DELETED
+            : SUCCESS_MESSAGES.CHAT_MESSAGE_DELETED,
         data: result,
       });
     } catch (error: any) {
       console.error("Delete message error:", error);
-      if (error.message === "Message not found") {
-        res.status(404).json({
+      const errMsg = getErrorMessage(error);
+      if (errMsg === "Message not found") {
+        res.status(RESPONSE_CODES.NOT_FOUND).json({
           success: false,
-          message: error.message,
+          message: ERROR_MESSAGES.CHAT_MESSAGE_NOT_FOUND,
         });
-      } else if (error.message === "You can only delete your own messages") {
-        res.status(403).json({
+      } else if (errMsg === "You can only delete your own messages") {
+        res.status(RESPONSE_CODES.FORBIDDEN).json({
           success: false,
-          message: error.message,
+          message: ERROR_MESSAGES.CHAT_MESSAGE_DELETE_FORBIDDEN,
         });
-      } else if (error.message.includes("too old")) {
-        res.status(400).json({
+      } else if (errMsg && errMsg.includes("too old")) {
+        res.status(RESPONSE_CODES.BAD_REQUEST).json({
           success: false,
-          message: error.message,
+          message: ERROR_MESSAGES.CHAT_MESSAGE_TOO_OLD,
         });
       } else {
-        res.status(500).json({
+        res.status(RESPONSE_CODES.SERVER_ERROR).json({
           success: false,
-          message: "Failed to delete message",
+          message: ERROR_MESSAGES.CHAT_FAILED_DELETE_MESSAGE,
         });
       }
     }

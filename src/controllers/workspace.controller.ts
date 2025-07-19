@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
 import WorkspaceService from "../services/workspace.service";
+import {
+  RESPONSE_CODES,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+} from "../utils/error_response";
 
 export class WorkspaceController {
   static async createWorkspace(req: Request, res: Response): Promise<void> {
@@ -11,9 +16,9 @@ export class WorkspaceController {
       console.log("User ID:", userId);
 
       if (!userId) {
-        res.status(401).json({
+        res.status(RESPONSE_CODES.UNAUTHORIZED).json({
           success: false,
-          message: "User ID is required",
+          message: ERROR_MESSAGES.UNAUTHORIZED,
         });
         return;
       }
@@ -23,16 +28,17 @@ export class WorkspaceController {
         userId,
       );
 
-      res.status(201).json({
+      res.status(RESPONSE_CODES.CREATED).json({
         success: true,
+        message: SUCCESS_MESSAGES.WORKSPACE_CREATED,
         data: workspace,
       });
     } catch (error: any) {
       console.error("Create workspace error:", error);
 
-      res.status(400).json({
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
         success: false,
-        message: error.message || "Failed to create workspace",
+        message: error.message || ERROR_MESSAGES.WORKSPACE_NOT_FOUND,
       });
     }
   }
@@ -42,24 +48,27 @@ export class WorkspaceController {
       const userId = req.user?.userId;
 
       if (!userId) {
-        res.status(401).json({
+        res.status(RESPONSE_CODES.UNAUTHORIZED).json({
           success: false,
-          message: "User ID is required",
+          message: ERROR_MESSAGES.UNAUTHORIZED,
         });
         return;
       }
 
       const workspaces = await WorkspaceService.getUserWorkspaces(userId);
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
+        message:
+          SUCCESS_MESSAGES.WORKSPACES_FOUND ||
+          "Workspaces récupérés avec succès.",
         data: workspaces,
       });
     } catch (error: any) {
       console.error("Get user workspaces error:", error);
-      res.status(500).json({
+      res.status(RESPONSE_CODES.SERVER_ERROR).json({
         success: false,
-        message: error.message || "Failed to get workspaces",
+        message: error.message || ERROR_MESSAGES.WORKSPACE_NOT_FOUND,
       });
     }
   }
@@ -70,17 +79,17 @@ export class WorkspaceController {
       const workspaceMember = req.workspaceMember;
 
       if (!workspace) {
-        res.status(404).json({
+        res.status(RESPONSE_CODES.NOT_FOUND).json({
           success: false,
-          message: "Workspace not found",
+          message: ERROR_MESSAGES.WORKSPACE_NOT_FOUND,
         });
         return;
       }
 
       if (!workspaceMember || !workspaceMember.role) {
-        res.status(403).json({
+        res.status(RESPONSE_CODES.FORBIDDEN).json({
           success: false,
-          message: "Workspace member or role not found",
+          message: ERROR_MESSAGES.ACCESS_DENIED,
         });
         return;
       }
@@ -92,15 +101,17 @@ export class WorkspaceController {
         role,
       );
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
+        message:
+          SUCCESS_MESSAGES.WORKSPACE_FOUND || "Workspace récupéré avec succès.",
         data: workspaceDetails,
       });
     } catch (error: any) {
       console.error("Get workspace error:", error);
-      res.status(500).json({
+      res.status(RESPONSE_CODES.SERVER_ERROR).json({
         success: false,
-        message: error.message || "Failed to get workspace",
+        message: error.message || ERROR_MESSAGES.WORKSPACE_NOT_FOUND,
       });
     }
   }
@@ -115,15 +126,16 @@ export class WorkspaceController {
         updateData,
       );
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
+        message: SUCCESS_MESSAGES.WORKSPACE_UPDATED,
         data: updatedWorkspace,
       });
     } catch (error: any) {
       console.error("Update workspace error:", error);
-      res.status(400).json({
+      res.status(RESPONSE_CODES.BAD_REQUEST).json({
         success: false,
-        message: error.message || "Failed to update workspace",
+        message: error.message || ERROR_MESSAGES.WORKSPACE_NOT_FOUND,
       });
     }
   }
@@ -134,16 +146,16 @@ export class WorkspaceController {
 
       await WorkspaceService.deleteWorkspace(workspaceId);
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
-        message: "Workspace deleted successfully",
+        message: SUCCESS_MESSAGES.WORKSPACE_DELETED,
       });
     } catch (error: any) {
       console.error("Delete workspace error:", error);
 
-      res.status(500).json({
+      res.status(RESPONSE_CODES.SERVER_ERROR).json({
         success: false,
-        message: error.message || "Failed to delete workspace",
+        message: error.message || ERROR_MESSAGES.WORKSPACE_NOT_FOUND,
       });
     }
   }

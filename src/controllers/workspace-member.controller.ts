@@ -1,5 +1,10 @@
 import { Request, Response } from "express";
 import WorkspaceMemberService from "../services/workspace-member.service";
+import {
+  RESPONSE_CODES,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+} from "../utils/error_response";
 
 export class WorkspaceMemberController {
   static async getWorkspaceMembers(req: Request, res: Response): Promise<void> {
@@ -9,16 +14,21 @@ export class WorkspaceMemberController {
       const members =
         await WorkspaceMemberService.getWorkspaceMembers(workspaceId);
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
+        message:
+          SUCCESS_MESSAGES.MEMBERS_FOUND || "Membres récupérés avec succès",
         data: members,
       });
     } catch (error: any) {
       console.error("Get workspace members error:", error);
 
-      res.status(500).json({
+      res.status(RESPONSE_CODES.SERVER_ERROR).json({
         success: false,
-        message: error.message || "Failed to get workspace members",
+        message:
+          error.message ||
+          ERROR_MESSAGES.MEMBERS_FETCH_FAILED ||
+          "Échec de la récupération des membres",
       });
     }
   }
@@ -35,22 +45,28 @@ export class WorkspaceMemberController {
         role,
       );
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
+        message: SUCCESS_MESSAGES.ROLE_UPDATED,
         data: updatedMember,
       });
     } catch (error: any) {
       console.error("Update member role error:", error);
 
-      const status = error.message.includes("not found")
-        ? 404
-        : error.message.includes("owner")
-          ? 403
-          : 500;
+      let status = RESPONSE_CODES.SERVER_ERROR;
+      let message = error.message || ERROR_MESSAGES.ROLE_NOT_ALLOWED;
+
+      if (error.message.includes("not found")) {
+        status = RESPONSE_CODES.NOT_FOUND;
+        message = ERROR_MESSAGES.MEMBER_NOT_FOUND;
+      } else if (error.message.includes("owner")) {
+        status = RESPONSE_CODES.FORBIDDEN;
+        message = ERROR_MESSAGES.OWNER_REQUIRED;
+      }
 
       res.status(status).json({
         success: false,
-        message: error.message || "Failed to update member role",
+        message,
       });
     }
   }
@@ -62,22 +78,27 @@ export class WorkspaceMemberController {
 
       await WorkspaceMemberService.removeMember(workspaceId, memberId);
 
-      res.status(200).json({
+      res.status(RESPONSE_CODES.OK).json({
         success: true,
-        message: "Member removed successfully",
+        message: SUCCESS_MESSAGES.MEMBER_REMOVED,
       });
     } catch (error: any) {
       console.error("Remove member error:", error);
 
-      const status = error.message.includes("not found")
-        ? 404
-        : error.message.includes("owner")
-          ? 403
-          : 500;
+      let status = RESPONSE_CODES.SERVER_ERROR;
+      let message = error.message || ERROR_MESSAGES.MEMBER_NOT_FOUND;
+
+      if (error.message.includes("not found")) {
+        status = RESPONSE_CODES.NOT_FOUND;
+        message = ERROR_MESSAGES.MEMBER_NOT_FOUND;
+      } else if (error.message.includes("owner")) {
+        status = RESPONSE_CODES.FORBIDDEN;
+        message = ERROR_MESSAGES.OWNER_REQUIRED;
+      }
 
       res.status(status).json({
         success: false,
-        message: error.message || "Failed to remove member",
+        message,
       });
     }
   }
