@@ -42,6 +42,18 @@ export const ERROR_MESSAGES = {
   WORKSPACES_FETCH_FAILED: "Échec de la récupération des workspaces.",
   WORKSPACE_FETCH_FAILED: "Échec de la récupération du workspace.",
 
+  // ==== VIDEO CONFERENCE SPECIFIQUES ====
+  SESSION_CREATION_FAILED: "Échec de la création de la session vidéo.",
+  SESSIONS_NOT_FOUND: "Aucune session vidéo trouvée.",
+  SESSION_NOT_FOUND: "Session vidéo introuvable.",
+  SESSION_END_FAILED: "Échec de la fermeture de la session vidéo.",
+  PARTICIPANTS_NOT_FOUND: "Aucun participant trouvé dans la session.",
+  MEDIA_UPDATE_FAILED: "Échec de la mise à jour des paramètres média.",
+  ACCESS_CHECK_FAILED: "Impossible de vérifier l'accès à la session.",
+  SESSION_FULL: "La session est pleine.",
+  SESSION_ENDED: "La session est terminée.",
+  NOT_SESSION_MEMBER: "Vous n'êtes pas membre de cette session.",
+
   // ==== PROJECT/PROJET SPÉCIFIQUES ====
   PROJECT_USER_NOT_AUTHENTICATED: "Utilisateur non authentifié.",
   PROJECT_NOT_FOUND: "Projet non trouvé.",
@@ -134,6 +146,13 @@ export const SUCCESS_MESSAGES = {
   MEMBERS_FOUND: "Membres récupérés avec succès.",
   WORKSPACES_FOUND: "Workspaces récupérés avec succès.",
   WORKSPACE_FOUND: "Workspace récupéré avec succès.",
+
+  // ==== VIDEO CONFERENCE SUCCÈS ====
+  SESSION_CREATED: "Session vidéo créée avec succès.",
+  SESSIONS_FOUND: "Sessions vidéo récupérées avec succès.",
+  PARTICIPANTS_FOUND: "Participants récupérés avec succès.",
+  SESSION_ENDED: "Session vidéo terminée avec succès.",
+  MEDIA_UPDATED: "Paramètres média mis à jour avec succès.",
 
   // ==== CHAT/CONVERSATION SUCCÈS ====
   CHAT_CREATED: "Conversation créée avec succès.",
